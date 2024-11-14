@@ -8,7 +8,7 @@
 - [ ] Prikazivanje tutorial za kretanje 
 
 ## Sound
-- [ ] Dodati sistem za zvuk
+- [x] Dodati sistem za zvuk
 - [ ] Naci zvukove 
 
 ## Player
@@ -17,7 +17,7 @@
 - [ ] Dodati animaciju ili efekat eksplozije kada player umre
 
 ## Enemy
-- [ ] Stvaranje posle 15-ak sekundi(proizvoljno) / neki tajmer u main-u koji ce inicijalizovati vreme koje treba da istekne da bi se neprijatelj stvorio(Svuda dodati proveru za None)
+- [x] Stvaranje posle 15-ak sekundi(proizvoljno) / neki tajmer u main-u koji ce inicijalizovati vreme koje treba da istekne da bi se neprijatelj stvorio(Svuda dodati proveru za None)
 - [ ] Napravljena je klasa za pickup(collectable) potrebno je dodati da kada se neprijatelj unisti on ispusti pickup koji kada neki od igraca pokupi on dobije jednu BOBMU.
 - [ ] Napraviti novi sprite sheet za neprijatelja
 - [ ] Dodati animaciju ili efekat ekspolzije kada enemy umre

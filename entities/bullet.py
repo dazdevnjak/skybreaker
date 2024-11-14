@@ -49,7 +49,7 @@ class Bullet:
         )
 
     @staticmethod
-    def Update_all(delta_time, player_one, player_two,enemy, screen):
+    def Update_all(delta_time, player_one, player_two, enemy, screen):
         for bullet in Bullet.instances[:]:
             bullet.update(delta_time)
 
@@ -58,11 +58,13 @@ class Bullet:
                 continue
 
             bullet_rect = bullet.render(screen)
-            if Bullet.Check_collision(bullet, bullet_rect, player_one, player_two,enemy):
+            if Bullet.Check_collision(
+                bullet, bullet_rect, player_one, player_two, enemy
+            ):
                 Bullet.instances.remove(bullet)
 
     @staticmethod
-    def Check_collision(bullet, bullet_rect, player_one, player_two,enemy):
+    def Check_collision(bullet, bullet_rect, player_one, player_two, enemy):
         if bullet.spawned_by == 2:
             if player_one.check_intersection(bullet_rect):
                 print(f"Player {bullet.spawned_by + 1} hit!")
@@ -79,7 +81,7 @@ class Bullet:
             print(f"Player {bullet.spawned_by + 1} hit!")
             target_player.take_damage(20)
             return True
-        if enemy.check_intersection(bullet_rect):
+        if enemy is not None and enemy.check_intersection(bullet_rect):
             print(f"Player {bullet.spawned_by + 1} hit enemy!")
             enemy.take_damage(20)
             return True

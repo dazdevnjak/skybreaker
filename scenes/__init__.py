@@ -9,6 +9,8 @@ from entities.collectable import Collectable, RocketItem
 
 
 class Scene:
+    active_scene = None
+
     def __init__(self) -> None:
         pass
 
@@ -19,16 +21,42 @@ class Scene:
 
 
 class MenuScene(Scene):
-    def __init__(self) -> None:
+    def __init__(self, screen, surface, screen_width, screen_height) -> None:
         super().__init__()
+        self.screen = screen
+        self.surface = surface
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+
+        self.start_button = Button(300, 250, 200, 80, text="Start", font_size=36)
 
     def update(self):
+        if Input.is_key_pressed(pygame.K_KP_ENTER):
+            Scene.active_scene = GameScene(
+                self.screen, self.surface, self.screen_width, self.screen_height
+            )
+
+        self.surface.fill((0, 0, 0, 0))
+
+        mouse_pos = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if self.start_button.is_clicked(event):
+                Scene.active_scene = GameScene(
+                    self.screen, self.surface, self.screen_width, self.screen_height
+                )
+
+        self.start_button.update(mouse_pos)
+        self.start_button.draw(self.screen)
+
+        self.screen.blit(self.surface, (0, 0))
         pass
 
     pass
 
 
 class GameScene(Scene):
+    ENEMY_SPAWN_TIME = 5
+
     def __init__(self, screen, surface, window_width, window_height) -> None:
         super().__init__()
         self.state: GameState = GameState(screen, surface)
@@ -49,9 +77,7 @@ class GameScene(Scene):
         self.state.player_two = Player(
             [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50)
         )
-        self.state.enemy = Enemy(
-            [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)], (220, 100)
-        )
+        self.enemy_spawn_timer = GameScene.ENEMY_SPAWN_TIME
 
         # Parallax settings
         self.parallax_speeds = [0.2, 0.3, 0.4, 0.5]
@@ -79,6 +105,14 @@ class GameScene(Scene):
             (-1, 0),
             self.state.delta_time,
         )
+        # Spawning enemy when timer run out
+        if self.state.enemy is None:
+            self.enemy_spawn_timer -= self.state.delta_time
+            if self.enemy_spawn_timer <= 0:
+                self.state.enemy = Enemy(
+                    [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)],
+                    (220, 100),
+                )
 
         self.handle_movement(self.state.player_one, KEYBOARD_PLAYER_ONE_CONTROLS, 0)
         self.handle_movement(self.state.player_two, KEYBOARD_PLAYER_TWO_CONTROLS, 1)
@@ -88,16 +122,20 @@ class GameScene(Scene):
         self.render_background(self.state.screen)
 
         self.state.player_one.check_other_player_edges(self.state.player_two)
-        self.state.enemy.check_other_player_edges(self.state.player_one)
-        self.state.enemy.check_other_player_edges(self.state.player_two)
+        if self.state.enemy is not None:
+            self.state.enemy.check_other_player_edges(self.state.player_one)
+            self.state.enemy.check_other_player_edges(self.state.player_two)
 
         self.state.player_one.update(self.state)
         self.state.player_one.render(self.state.surface)
         self.state.player_two.update(self.state)
         self.state.player_two.render(self.state.surface)
-        self.state.enemy.update(self.state)
-        self.state.enemy.check_edges(self.state.window_width, self.state.window_height)
-        self.state.enemy.render(self.state.surface)
+        if self.state.enemy is not None:
+            self.state.enemy.update(self.state)
+            self.state.enemy.check_edges(
+                self.state.window_width, self.state.window_height
+            )
+            self.state.enemy.render(self.state.surface)
 
         self.state.player_one.update_ui()
         self.state.player_two.update_ui()
@@ -126,8 +164,6 @@ class GameScene(Scene):
         pass
 
     def handle_input(self):
-        Input.update()
-
         state = self.state
 
         if not Input.is_joystick_connected(0):

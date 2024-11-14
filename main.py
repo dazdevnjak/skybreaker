@@ -3,18 +3,15 @@ from operator import index
 import pygame
 from pygame.locals import *
 from utility import *
-
-from entities.player import Player, Enemy
-from entities.bullet import Bullet
-from entities.rocket import Rocket
-from entities.collectable import Collectable, RocketItem
 from scenes import *
 
 
 def main():
-    current_scene: Scene = None
-
     pygame.init()
+    pygame.mixer.init()
+
+    # Setup SoundSystem
+    SoundSystem.Init()
 
     # Screen setup
     screen_width, screen_height = 576, 324
@@ -25,9 +22,8 @@ def main():
     pygame.display.set_caption("Break the Floor!")
 
     # Load Initial Scenes
+    Scene.active_scene = GameScene(screen, surface, screen_width, screen_height)
     # current_scene = MenuScene()
-    current_scene = GameScene(screen, surface, screen_width, screen_height)
-    # current_scene = ResultScene()
 
     # Initialize joysticks
     Input.init()
@@ -37,11 +33,12 @@ def main():
     running = True
 
     while running:
+        Input.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        current_scene.update()
+        Scene.active_scene.update()
         pygame.display.update()
         pass
 

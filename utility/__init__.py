@@ -231,7 +231,7 @@ class ControllableObject:
         )
 
         self.indicator_radius = 30
-        
+
         self.health = 100
         pass
 
@@ -353,3 +353,117 @@ class ControllableObject:
         if other is None:
             return False
         return self.hitbox_rect.colliderect(other)
+
+
+class Button:
+    def __init__(
+        self,
+        x,
+        y,
+        width,
+        height,
+        text="",
+        font_size=30,
+        font_color=(0, 0, 0),
+        button_color=(150, 150, 150),
+        hover_color=(170, 170, 170),
+    ):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.font_size = font_size
+        self.font_color = font_color
+        self.button_color = button_color
+        self.hover_color = hover_color
+        self.is_hovered = False
+
+        self.font = pygame.font.Font(None, self.font_size)
+        self.text_surface = self.font.render(self.text, True, self.font_color)
+        self.text_rect = self.text_surface.get_rect(center=self.rect.center)
+
+    def draw(self, screen):
+        if self.is_hovered:
+            pygame.draw.rect(screen, self.hover_color, self.rect)
+        else:
+            pygame.draw.rect(screen, self.button_color, self.rect)
+        screen.blit(self.text_surface, self.text_rect)
+
+    def update(self, mouse_pos):
+        self.is_hovered = self.rect.collidepoint(mouse_pos)
+
+    def is_clicked(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered:
+                return True
+        return False
+
+
+class SoundSystem:
+    sounds = None
+    background_music = None
+    music_volume = 0.5
+    sound_volume = 0.5
+
+    @staticmethod
+    def Init():
+        SoundSystem.sounds = {}
+        SoundSystem.background_music = None
+        SoundSystem.music_volume = 0.5
+        SoundSystem.sound_volume = 0.5
+
+    @staticmethod
+    def load_sound(name, file_path):
+        try:
+            sound = pygame.mixer.Sound(file_path)
+            sound.set_volume(SoundSystem.sound_volume)
+            SoundSystem.sounds[name] = sound
+        except pygame.error as e:
+            print(f"Error loading sound {file_path}: {e}")
+
+    @staticmethod
+    def load_all_sound(data: dict[str, str]):
+        for name, path in data.items():
+            SoundSystem.load_sound(name, path)
+        pass
+
+    @staticmethod
+    def play_sound(name, loops=0):
+        if name in SoundSystem.sounds:
+            SoundSystem.sounds[name].play(loops=loops)
+        else:
+            print(f"Sound {name} not found!")
+
+    @staticmethod
+    def stop_sound(name):
+        if name in SoundSystem.sounds:
+            SoundSystem.sounds[name].stop()
+
+    @staticmethod
+    def set_sound_volume(self, volume):
+        SoundSystem.sound_volume = max(0.0, min(1.0, volume))
+        for sound in SoundSystem.sounds.values():
+            sound.set_volume(SoundSystem.sound_volume)
+        pass
+
+    @staticmethod
+    def load_background_music(path):
+        try:
+            SoundSystem.background_music = pygame.mixer.Sound(path)
+            SoundSystem.background_music.set_volume(SoundSystem.music_volume)
+        except pygame.error as e:
+            print(f"Error loading sound {path}: {e}")
+
+    @staticmethod
+    def play_background_music(loops=-1):
+        if SoundSystem.background_music:
+            pygame.mixer.music.play(loops=loops)
+            pygame.mixer.music.set_volume(SoundSystem.music_volume)
+        else:
+            print("No background music!")
+
+    @staticmethod
+    def stop_background_music():
+        pygame.mixer.music.stop()
+
+    @staticmethod
+    def resume_background_music():
+        pygame.mixer.music.unpause()

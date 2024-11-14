@@ -2,6 +2,7 @@ import pygame
 import math
 from utility import ControllableObject
 from entities.bullet import Bullet
+import random
 
 
 class Player(ControllableObject):
@@ -14,7 +15,7 @@ class Player(ControllableObject):
             for path in image_paths
         ]
         self.animation_delay = animation_delay
-        self.current_frame = 0
+        self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
         self.previous_health = 100
         self.health_bar_size = (25, 7)
@@ -186,7 +187,7 @@ class Enemy(ControllableObject):
         self.max_speed /= 2
 
         self.animation_delay = animation_delay
-        self.current_frame = 0
+        self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
         self.previous_health = 100
         self.health_bar_size = (25, 7)
@@ -359,7 +360,7 @@ class Enemy(ControllableObject):
             self.indicator_angle = math.degrees(angle_radii)
 
         if target is not None:
-            gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 250)
+            gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 150)
             if gp1 is not None:
                 good_position = self.find_better_area(
                     gp1, gp2, state.window_width, state.window_height
