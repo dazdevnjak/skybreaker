@@ -1,10 +1,11 @@
 import pygame
 import math
+from utility import Executor
 
 
 class Bullet:
     instances = []
-    BULLET_DELETE_TIME = 1.5
+    BULLET_DELETE_TIME = 1500  # 1500ms = 1.5s
     BULLET_FIRE_COOLDOWN = 0.5
 
     def __init__(
@@ -25,11 +26,9 @@ class Bullet:
         self.velocity = direction * speed
 
         self.angle = math.degrees(math.atan2(direction.y, direction.x))
-        self.delete_time = 0.0
 
-    def update(self, delta_time):
+    def update(self):
         self.position += self.velocity
-        self.delete_time += delta_time
 
     def render(self, screen):
         rotated_image = pygame.transform.rotate(self.image, -self.angle)
@@ -44,18 +43,19 @@ class Bullet:
             if index == 0
             else "assets/images/bullet_two.png"
         )
-        Bullet.instances.append(
-            Bullet(image_path, start_position, target_position, index)
+        bullet = Bullet(image_path, start_position, target_position, index)
+        Bullet.instances.append(bullet)
+        Executor.wait(
+            Bullet.BULLET_DELETE_TIME,
+            lambda: (
+                Bullet.instances.remove(bullet) if bullet in Bullet.instances else None
+            ),
         )
 
     @staticmethod
-    def Update_all(delta_time, player_one, player_two, enemy, screen):
+    def Update_all(player_one, player_two, enemy, screen):
         for bullet in Bullet.instances[:]:
-            bullet.update(delta_time)
-
-            if bullet.delete_time >= Bullet.BULLET_DELETE_TIME:
-                Bullet.instances.remove(bullet)
-                continue
+            bullet.update()
 
             bullet_rect = bullet.render(screen)
             if Bullet.Check_collision(

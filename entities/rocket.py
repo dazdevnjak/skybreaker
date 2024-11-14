@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+from utility import Executor
 
 
 class Indicator:
@@ -20,11 +21,8 @@ class Rocket:
     instances = []
     indicator_instances = []
 
-    current_state_indicator = True
-    state_timer = 2.0
-
-    INDICATOR_DURATION = 2.0
-    PROJECTILE_DURATION = 5.0
+    INDICATOR_DURATION = 2000  # 2000ms = 2s
+    PROJECTILE_DURATION = 5000  # 5000ms = 5s
 
     ROCKET_ROW_COUNT = 2
     ROCKET_COL_COUNT = 3
@@ -50,7 +48,7 @@ class Rocket:
             math.atan2(self.target_direction.y, self.target_direction.x)
         )
 
-    def update(self, delta_time):
+    def update(self):
         self.position += self.velocity
         pass
 
@@ -64,53 +62,6 @@ class Rocket:
         return self.position.x < 0
 
     @staticmethod
-    def InstantiateRandom(start_x, max_height, direction, delta_time):
-        Rocket.state_timer -= delta_time
-
-        if Rocket.current_state_indicator:
-            if Rocket.state_timer <= 0:
-                Rocket.current_state_indicator = False
-                Rocket.state_timer = Rocket.PROJECTILE_DURATION
-
-                Rocket.indicator_instances.clear()
-
-                for position in Rocket.projectile_positions:
-                    Rocket.Instantiate(position, direction)
-
-        elif not Rocket.current_state_indicator:
-            if Rocket.state_timer <= 0:
-                Rocket.current_state_indicator = True
-                Rocket.state_timer = Rocket.INDICATOR_DURATION
-
-                Rocket.projectile_positions.clear()
-                Rocket.indicator_instances.clear()
-
-                for _ in range(random.randint(1, Rocket.ROCKET_ROW_COUNT)):
-                    height = max_height * random.random()
-                    for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
-                        position_x = start_x + col * Rocket.ROCKET_COL_SPACING
-                        Rocket.projectile_positions.append((position_x, height))
-
-                for pos in Rocket.projectile_positions:
-                    Rocket.InstantiateIndicator((pos[0] - 50, pos[1]))
-
-        if (
-            Rocket.current_state_indicator == True
-            and Rocket.state_timer == Rocket.INDICATOR_DURATION
-        ):
-            Rocket.projectile_positions.clear()
-            Rocket.indicator_instances.clear()
-
-            for _ in range(random.randint(1, Rocket.ROCKET_ROW_COUNT)):
-                height = max_height * random.random()
-                for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
-                    position_x = start_x + col * Rocket.ROCKET_COL_SPACING
-                    Rocket.projectile_positions.append((position_x, height))
-
-            for pos in Rocket.projectile_positions:
-                Rocket.InstantiateIndicator((pos[0] - 50, pos[1]))
-
-    @staticmethod
     def InstantiateIndicator(start_position):
         indicator = Indicator(start_position)
         Rocket.indicator_instances.append(indicator)
@@ -122,9 +73,41 @@ class Rocket:
         )
 
     @staticmethod
-    def Update_all(delta_time, player_one, player_two, screen):
+    def LaunchRockets(max_height, start_x):
+        Rocket.projectile_positions.clear()
+        Rocket.indicator_instances.clear()
+
+        for _ in range(random.randint(1, Rocket.ROCKET_ROW_COUNT)):
+            height = max_height * random.random()
+            for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
+                position_x = start_x + col * Rocket.ROCKET_COL_SPACING
+                Rocket.projectile_positions.append((position_x, height))
+
+        for i in range(len(Rocket.projectile_positions)):
+            Rocket.InstantiateIndicator(
+                (
+                    Rocket.projectile_positions[i][0] - 50,
+                    Rocket.projectile_positions[i][1],
+                )
+            )
+            Executor.wait(
+                Rocket.INDICATOR_DURATION,
+                lambda: Rocket.Instantiate(Rocket.projectile_positions[i], (-1, 0)),
+            )
+
+        def spawn_all_rockets():
+            Rocket.indicator_instances.clear()
+            for pos in Rocket.projectile_positions:
+                Rocket.Instantiate(pos, (-1, 0))
+            Rocket.projectile_positions.clear()
+
+        Executor.wait(Rocket.INDICATOR_DURATION, spawn_all_rockets)
+        pass
+
+    @staticmethod
+    def Update_all(player_one, player_two, screen):
         for rocket in Rocket.instances[:]:
-            rocket.update(delta_time)
+            rocket.update()
 
             if rocket.out_of_bounds():
                 Rocket.instances.remove(rocket)

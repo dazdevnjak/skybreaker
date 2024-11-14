@@ -5,7 +5,7 @@ from utility import *
 from entities.player import Player, Enemy
 from entities.bullet import Bullet
 from entities.rocket import Rocket
-from entities.collectable import Collectable, RocketItem
+from entities.collectable import Collectable
 
 
 class Scene:
@@ -55,7 +55,8 @@ class MenuScene(Scene):
 
 
 class GameScene(Scene):
-    ENEMY_SPAWN_TIME = 5
+    ENEMY_SPAWN_TIME = 15000  # 15000ms / 15s
+    ROCKETS_START_TIME = 5000  # 5000ms / 5s
 
     def __init__(self, screen, surface, window_width, window_height) -> None:
         super().__init__()
@@ -77,15 +78,14 @@ class GameScene(Scene):
         self.state.player_two = Player(
             [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50)
         )
-        self.enemy_spawn_timer = GameScene.ENEMY_SPAWN_TIME
+        Executor.wait(GameScene.ENEMY_SPAWN_TIME, self.spawn_enemy)
+        Executor.wait(GameScene.ROCKETS_START_TIME, self.spawn_rockets)
 
         # Parallax settings
         self.parallax_speeds = [0.2, 0.3, 0.4, 0.5]
         self.x_positions = [0, 0, 0, 0]
 
-        # TODO : Remove this later(only for testing)
-        RocketItem.Instantiate(pygame.Vector2(20, 20))
-        RocketItem.Instantiate(pygame.Vector2(20, 300))
+        Executor.init()
         pass
 
     def update(self) -> None:
@@ -96,23 +96,10 @@ class GameScene(Scene):
         ) / 1000.0
         self.state.previous_time = self.state.current_time
 
+        Executor.update()
+
         # Update input
         self.handle_input()
-
-        Rocket.InstantiateRandom(
-            self.state.window_width,
-            self.state.window_height,
-            (-1, 0),
-            self.state.delta_time,
-        )
-        # Spawning enemy when timer run out
-        if self.state.enemy is None:
-            self.enemy_spawn_timer -= self.state.delta_time
-            if self.enemy_spawn_timer <= 0:
-                self.state.enemy = Enemy(
-                    [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)],
-                    (220, 100),
-                )
 
         self.handle_movement(self.state.player_one, KEYBOARD_PLAYER_ONE_CONTROLS, 0)
         self.handle_movement(self.state.player_two, KEYBOARD_PLAYER_TWO_CONTROLS, 1)
@@ -136,19 +123,19 @@ class GameScene(Scene):
                 self.state.window_width, self.state.window_height
             )
             self.state.enemy.render(self.state.surface)
+            if self.state.enemy.health <= 0:
+                self.state.enemy = None  # Removing enemy
 
         self.state.player_one.update_ui()
         self.state.player_two.update_ui()
 
         Bullet.Update_all(
-            self.state.delta_time,
             self.state.player_one,
             self.state.player_two,
             self.state.enemy,
             self.state.surface,
         )
         Rocket.Update_all(
-            self.state.delta_time,
             self.state.player_one,
             self.state.player_two,
             self.state.surface,
@@ -226,6 +213,22 @@ class GameScene(Scene):
             screen.blit(
                 background_image, (self.x_positions[i] + self.state.window_width, 0)
             )
+        pass
+
+    def spawn_enemy(self):
+        self.state.enemy = Enemy(
+            [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)],
+            (220, 100),
+        )
+        pass
+
+    def spawn_rockets(self):
+        Executor.repeat(
+            Rocket.PROJECTILE_DURATION,
+            lambda: Rocket.LaunchRockets(
+                self.state.window_height, self.state.window_width
+            ),
+        )
         pass
 
     pass

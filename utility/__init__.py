@@ -58,6 +58,70 @@ JOYSTICK_PLAYER_CONTROLS = [
 ]
 
 
+class Executor:
+    class ExecState:
+        def __init__(self, time: float, method) -> None:
+            self.__method = method
+            self.__time = time
+            self.__timer = pygame.time.get_ticks()
+            pass
+
+        def reset_timer(self) -> None:
+            self.__timer = pygame.time.get_ticks()
+
+        def update(self, current) -> bool:
+            return (current - self.__timer) >= self.__time
+
+        def invoke(self) -> None:
+            self.__method()
+
+    one_time_method = []
+    repeat_method = []
+
+    @staticmethod
+    def init():
+        for exec_state in Executor.one_time_method:
+            exec_state.reset_timer()
+        for exec_state in Executor.repeat_method:
+            exec_state.reset_timer()
+        pass
+
+    @staticmethod
+    def reset():
+        Executor.one_time_method.clear()
+        Executor.repeat_method.clear()
+        pass
+
+    @staticmethod
+    def wait(time: float, method):
+        Executor.one_time_method.append(Executor.ExecState(time, method))
+        pass
+
+    @staticmethod
+    def repeat(time: float, method):
+        Executor.repeat_method.append(Executor.ExecState(time, method))
+        pass
+
+    @staticmethod
+    def remove(method):
+        # TODO : Add removing repeat_method
+        pass
+
+    @staticmethod
+    def update():
+        current = pygame.time.get_ticks()
+        for exec_state in Executor.one_time_method[:]:
+            if exec_state.update(current):
+                exec_state.invoke()
+                Executor.one_time_method.remove(exec_state)
+
+        for exec_state in Executor.repeat_method:
+            if exec_state.update(current):
+                exec_state.invoke()
+                exec_state.reset_timer()
+        pass
+
+
 class Input:
     __current_keys = None
     __previous_keys = None

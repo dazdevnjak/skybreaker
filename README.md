@@ -12,13 +12,14 @@
 - [ ] Naci zvukove 
 
 ## Player
-- [ ] Dodati 3 zivota i UI za to
-- [ ] Na smrt resetovati i staviti nevidljivost na malo duzi period 
+- [x] Dodati 3 zivota
+- [ ] Dodati UI za 3 zivota 
+- [x] Na smrt resetovati i staviti nevidljivost na malo duzi period 
 - [ ] Dodati animaciju ili efekat eksplozije kada player umre
 
 ## Enemy
 - [x] Stvaranje posle 15-ak sekundi(proizvoljno) / neki tajmer u main-u koji ce inicijalizovati vreme koje treba da istekne da bi se neprijatelj stvorio(Svuda dodati proveru za None)
-- [ ] Napravljena je klasa za pickup(collectable) potrebno je dodati da kada se neprijatelj unisti on ispusti pickup koji kada neki od igraca pokupi on dobije jednu BOBMU.
+- [x] Napravljena je klasa za pickup(collectable) potrebno je dodati da kada se neprijatelj unisti on ispusti pickup koji kada neki od igraca pokupi on dobije jednu BOBMU.
 - [ ] Napraviti novi sprite sheet za neprijatelja
 - [ ] Dodati animaciju ili efekat ekspolzije kada enemy umre
 

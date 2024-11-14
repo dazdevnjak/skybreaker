@@ -2,11 +2,15 @@ import pygame
 import math
 from utility import ControllableObject
 from entities.bullet import Bullet
+from entities.collectable import BombItem
 import random
 
 
 class Player(ControllableObject):
     fire_cooldown = 0.0
+
+    INVISIBLE_TIME_MS = 1000
+    VULNERABLE_TIME_MS = 3000
 
     def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
         ControllableObject.__init__(self, position, size)
@@ -17,11 +21,13 @@ class Player(ControllableObject):
         self.animation_delay = animation_delay
         self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
+        self.lives = 3
         self.previous_health = 100
         self.health_bar_size = (25, 7)
         self.health_fill_bar_size = (20, 3)
         self.shake_x_offset = 0
         self.shake_y_offset = 0
+        self.bomb_count = 0
 
         self.health_bar_bg = pygame.transform.scale(
             pygame.image.load("assets/images/health_bar/bar_bg.png").convert_alpha(),
@@ -34,6 +40,7 @@ class Player(ControllableObject):
             self.health_fill_bar_size,
         )
         self.is_invincible = False
+        self.is_vulnerable = False
         self.invincible_start_time = 0
         self.blink_interval = 35
         self.last_blink_time = 0
@@ -58,8 +65,13 @@ class Player(ControllableObject):
         self.fire_cooldown -= state.delta_time
 
         if self.is_invincible:
-            if (current_time - self.invincible_start_time) >= 1000:
+            if (current_time - self.invincible_start_time) >= (
+                self.VULNERABLE_TIME_MS
+                if self.is_vulnerable
+                else self.INVISIBLE_TIME_MS
+            ):
                 self.is_invincible = False
+                self.is_vulnerable = False
                 for frame in self.frames:
                     frame.set_alpha(255)
             else:
@@ -165,8 +177,25 @@ class Player(ControllableObject):
     def can_fire(self) -> bool:
         return self.fire_cooldown <= 0
 
+    def can_fire_bomb(self) -> bool:
+        return self.can_fire() and self.bomb_count > 0
+
     def on_death(self) -> None:
-        print("Player died!")
+        self.lives -= 1
+        if self.lives > 0:
+            self.reset()
+        else:
+            # TODO : Game should end here
+            print("End game!")
+            pass
+        pass
+
+    def reset(self) -> None:
+        self.health = 100
+        self.is_invincible = True
+        self.is_vulnerable = True
+        self.invincible_start_time = pygame.time.get_ticks()
+        self.damage_animation_start_time = pygame.time.get_ticks()
         pass
 
 
@@ -218,6 +247,7 @@ class Enemy(ControllableObject):
         self.health -= damage
         if self.health <= 0:
             self.health = 0
+            self.on_death()
         self.damage_animation_start_time = pygame.time.get_ticks()
         self.start_damage_animation = True
 
@@ -480,5 +510,9 @@ class Enemy(ControllableObject):
 
     def can_fire(self) -> bool:
         return self.fire_cooldown <= 0
+
+    def on_death(self) -> None:
+        BombItem.Instantiate(pygame.Vector2(self.position[0], self.position[1]))
+        pass
 
     pass
