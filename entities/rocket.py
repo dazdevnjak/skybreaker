@@ -4,13 +4,15 @@ import random
 
 
 class Indicator:
-    def __init__(self, position, image_path="assets/images/indicator.png", size = (10, 25)):
+    def __init__(
+        self, position, image_path="assets/images/indicator.png", size=(10, 25)
+    ):
         self.image = pygame.transform.scale(pygame.image.load(image_path), size)
         self.position = pygame.Vector2(position)
 
     def render(self, screen):
         rect = self.image.get_rect(center=self.position)
-        screen.blit(self.image,rect)
+        screen.blit(self.image, rect)
         return rect
 
 
@@ -24,7 +26,6 @@ class Rocket:
     INDICATOR_DURATION = 2.0
     PROJECTILE_DURATION = 5.0
 
-    ROCKET_DELETE_TIME = 5
     ROCKET_ROW_COUNT = 2
     ROCKET_COL_COUNT = 3
     ROCKET_COL_SPACING = 80
@@ -48,17 +49,19 @@ class Rocket:
         self.angle = math.degrees(
             math.atan2(self.target_direction.y, self.target_direction.x)
         )
-        self.delete_time = 0.0
 
     def update(self, delta_time):
         self.position += self.velocity
-        self.delete_time += delta_time
+        pass
 
     def render(self, screen):
         rotated_image = pygame.transform.rotate(self.image, -self.angle)
         rotated_rect = rotated_image.get_rect(center=self.position)
         screen.blit(rotated_image, rotated_rect.topleft)
         return rotated_rect
+
+    def out_of_bounds(self) -> bool:
+        return self.position.x < 0
 
     @staticmethod
     def InstantiateRandom(start_x, max_height, direction, delta_time):
@@ -91,7 +94,10 @@ class Rocket:
                 for pos in Rocket.projectile_positions:
                     Rocket.InstantiateIndicator((pos[0] - 50, pos[1]))
 
-        if Rocket.current_state_indicator == True and Rocket.state_timer == Rocket.INDICATOR_DURATION:
+        if (
+            Rocket.current_state_indicator == True
+            and Rocket.state_timer == Rocket.INDICATOR_DURATION
+        ):
             Rocket.projectile_positions.clear()
             Rocket.indicator_instances.clear()
 
@@ -103,7 +109,6 @@ class Rocket:
 
             for pos in Rocket.projectile_positions:
                 Rocket.InstantiateIndicator((pos[0] - 50, pos[1]))
-
 
     @staticmethod
     def InstantiateIndicator(start_position):
@@ -121,7 +126,7 @@ class Rocket:
         for rocket in Rocket.instances[:]:
             rocket.update(delta_time)
 
-            if rocket.delete_time >= Rocket.ROCKET_DELETE_TIME:
+            if rocket.out_of_bounds():
                 Rocket.instances.remove(rocket)
                 continue
 

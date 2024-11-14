@@ -210,6 +210,8 @@ class ControllableObject:
     indicator_angle: int = 0
     indicator_color: tuple[int, int, int] = (255, 255, 255)
 
+    health: int = 100
+
     def __init__(self, _position, _size=(128, 72)) -> None:
         self.position = list(_position)
         self.size = _size
@@ -229,6 +231,8 @@ class ControllableObject:
         )
 
         self.indicator_radius = 30
+        
+        self.health = 100
         pass
 
     def update(self):

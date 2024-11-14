@@ -16,7 +16,6 @@ class Player(ControllableObject):
         self.animation_delay = animation_delay
         self.current_frame = 0
         self.last_update = pygame.time.get_ticks()
-        self.health = 100
         self.previous_health = 100
         self.health_bar_size = (25, 7)
         self.health_fill_bar_size = (20, 3)
@@ -189,7 +188,6 @@ class Enemy(ControllableObject):
         self.animation_delay = animation_delay
         self.current_frame = 0
         self.last_update = pygame.time.get_ticks()
-        self.health = 100
         self.previous_health = 100
         self.health_bar_size = (25, 7)
         self.health_fill_bar_size = (20, 3)
