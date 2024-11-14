@@ -1,0 +1,439 @@
+import pygame
+import math
+from utility import ControllableObject
+from entities.bullet import Bullet
+
+class Player(ControllableObject):
+    fire_cooldown = 0.0
+
+    def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
+        ControllableObject.__init__(self, position, size)
+        self.frames = [
+            pygame.transform.scale(pygame.image.load(path), size).convert_alpha()
+            for path in image_paths
+        ]
+        self.animation_delay = animation_delay
+        self.current_frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.health = 100
+        self.previous_health = 100
+        self.health_bar_size = (25, 7)
+        self.health_fill_bar_size = (20, 3)
+        self.shake_x_offset = 0
+        self.shake_y_offset = 0
+
+        self.health_bar_bg = pygame.transform.scale(
+            pygame.image.load(
+                "assets/images/health_bar/bar_bg.png"
+            ).convert_alpha(),
+            self.health_bar_size,
+        )
+        self.health_bar_fill = pygame.transform.scale(
+            pygame.image.load(
+                "assets/images/health_bar/bar_fill_small.png"
+            ).convert_alpha(),
+            self.health_fill_bar_size,
+        )
+        self.is_invincible = False
+        self.invincible_start_time = 0
+        self.blink_interval = 35
+        self.last_blink_time = 0
+        self.damage_animation_start_time = None
+        self.damage_animation_duration = 500
+
+    def take_damage(self, damage):
+        if not self.is_invincible:
+            self.previous_health = self.health
+            self.health -= damage
+            if self.health <= 0:
+                self.health = 0
+            else:
+                self.is_invincible = True
+                self.invincible_start_time = pygame.time.get_ticks()
+            self.damage_animation_start_time = pygame.time.get_ticks()
+
+    def update(self, state) -> None:
+        current_time = state.current_time
+
+        self.fire_cooldown -= state.delta_time
+
+        if self.is_invincible:
+            if (current_time - self.invincible_start_time) >= 1000:
+                self.is_invincible = False
+                for frame in self.frames:
+                    frame.set_alpha(255)
+            else:
+                alpha_value = 128 + int(127 * (abs(math.sin((current_time - self.invincible_start_time) / 100))))
+                for frame in self.frames:
+                    frame.set_alpha(alpha_value)
+
+        if current_time - self.last_update > self.animation_delay:
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.last_update = current_time
+
+        ControllableObject.update(self)
+
+    def update_ui(self):
+        current_time = pygame.time.get_ticks()
+        fill_alpha = 200
+
+        if self.damage_animation_start_time:
+            elapsed = current_time - self.damage_animation_start_time
+
+            if elapsed < self.damage_animation_duration:
+                start_width = int((self.previous_health / 100) * self.health_fill_bar_size[0])
+                end_width = int((self.health / 100) * self.health_fill_bar_size[0])
+                progress = elapsed / self.damage_animation_duration
+                self.health_fill_width = int(start_width + (end_width - start_width) * progress)
+                
+                shake_amplitude = 3
+                shake_offset = shake_amplitude * math.sin(elapsed * 0.05)
+                self.shake_x_offset = int(shake_offset)
+                self.shake_y_offset = int(shake_offset)
+                
+                color_progress = min(1.0, progress)
+                white_color = (255, 255, 255)
+                red_color = (255, 0, 0)
+                fill_color = (
+                    int(white_color[0] * (1 - color_progress) + red_color[0] * color_progress),
+                    int(white_color[1] * (1 - color_progress) + red_color[1] * color_progress),
+                    int(white_color[2] * (1 - color_progress) + red_color[2] * color_progress),
+                )
+                self.health_bar_fill.fill(fill_color)
+
+            else:
+                self.shake_x_offset = 0
+                self.shake_y_offset = 0
+
+                self.health_fill_width = int((self.health / 100) * self.health_fill_bar_size[0])
+                self.damage_animation_start_time = None
+                
+        else:
+            self.health_fill_width = int((self.health / 100) * self.health_fill_bar_size[0])
+
+        self.health_bar_fill.set_alpha(fill_alpha)
+        self.health_bar_bg.set_alpha(fill_alpha)
+
+    def render(self, screen):
+        self.update_ui()
+
+        health_bar_position = (
+        self.position[0] + 80 + self.shake_x_offset,
+        self.position[1] + 10 + self.shake_y_offset,
+        )
+
+        screen.blit(self.health_bar_bg, health_bar_position)
+
+        fill_position = (
+            health_bar_position[0] + 2,
+            health_bar_position[1] + 2,
+        )
+
+        health_fill_rect = pygame.Rect(
+            fill_position, (self.health_fill_width, self.health_bar_size[1])
+        )
+
+        screen.blit(
+            self.health_bar_fill,
+            health_fill_rect,
+            (0, 0, self.health_fill_width, self.health_bar_size[1]),
+        )
+
+        ControllableObject.render(self, screen)
+        screen.blit(self.frames[self.current_frame], self.position)
+
+
+    def can_fire(self) -> bool:
+        return self.fire_cooldown <= 0
+
+
+class Enemy(ControllableObject):
+    fire_cooldown = 0.0
+    POSITION_SEARCH_INTERVAL:float = 0.2
+    FIRE_RATE = 3
+    current_target = None
+    timer:float = 0.0
+    
+    def __init__(self, image_paths, _position, _size=(128, 72), animation_delay=100):
+        ControllableObject.__init__(self, _position, _size)
+        self.frames = [
+            pygame.transform.scale(pygame.image.load(path), _size).convert_alpha()
+            for path in image_paths
+        ]
+        self.speed /= 2
+        self.max_speed /= 2
+
+        self.animation_delay = animation_delay
+        self.current_frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.health = 100
+        self.previous_health = 100
+        self.health_bar_size = (25, 7)
+        self.health_fill_bar_size = (20, 3)
+        self.shake_x_offset = 0
+        self.shake_y_offset = 0
+        self.start_damage_animation = False
+        self.damage_animation_start_time = 0
+
+        self.health_bar_bg = pygame.transform.scale(
+            pygame.image.load(
+                "assets/images/health_bar/bar_bg.png"
+            ).convert_alpha(),
+            self.health_bar_size,
+        )
+        self.health_bar_fill = pygame.transform.scale(
+            pygame.image.load(
+                "assets/images/health_bar/bar_fill_small.png"
+            ).convert_alpha(),
+            self.health_fill_bar_size,
+        )
+
+        self.blink_interval = 35
+        self.last_blink_time = 0
+        self.damage_animation_start_time = None
+        self.damage_animation_duration = 500
+
+    def take_damage(self, damage):      
+        self.previous_health = self.health
+        self.health -= damage
+        if self.health <= 0:
+            self.health = 0
+        self.damage_animation_start_time = pygame.time.get_ticks()
+        self.start_damage_animation = True
+
+    def animate_enemy_taking_damage(self, state):
+        current_time = state.current_time
+
+        if (current_time - self.damage_animation_start_time) >= 1000:
+            for frame in self.frames:
+                frame.set_alpha(255)
+            self.start_damage_animation = False
+        else:
+            alpha_value = 128 + int(127 * (abs(math.sin((current_time - self.damage_animation_start_time) / 100))))
+            for frame in self.frames:
+                frame.set_alpha(alpha_value)
+
+    def render(self,screen):
+        self.update_ui()
+
+        health_bar_position = (
+        self.position[0] + 80 + self.shake_x_offset,
+        self.position[1] + 10 + self.shake_y_offset,
+        )
+
+        screen.blit(self.health_bar_bg, health_bar_position)
+
+        fill_position = (
+            health_bar_position[0] + 2,
+            health_bar_position[1] + 2,
+        )
+
+        health_fill_rect = pygame.Rect(
+            fill_position, (self.health_fill_width, self.health_bar_size[1])
+        )
+
+        screen.blit(
+            self.health_bar_fill,
+            health_fill_rect,
+            (0, 0, self.health_fill_width, self.health_bar_size[1]),
+        )
+
+
+        # TODO : OVDE
+        ControllableObject.render(self,screen)
+        screen.blit(self.frames[self.current_frame], self.position)
+
+    
+    def update_ui(self):
+        current_time = pygame.time.get_ticks()
+        fill_alpha = 200
+
+        if self.damage_animation_start_time:
+            elapsed = current_time - self.damage_animation_start_time
+
+            if elapsed < self.damage_animation_duration:
+                start_width = int((self.previous_health / 100) * self.health_fill_bar_size[0])
+                end_width = int((self.health / 100) * self.health_fill_bar_size[0])
+                progress = elapsed / self.damage_animation_duration
+                self.health_fill_width = int(start_width + (end_width - start_width) * progress)
+                
+                shake_amplitude = 3
+                shake_offset = shake_amplitude * math.sin(elapsed * 0.05)
+                self.shake_x_offset = int(shake_offset)
+                self.shake_y_offset = int(shake_offset)
+                
+                color_progress = min(1.0, progress)
+                white_color = (255, 255, 255)
+                red_color = (255, 0, 0)
+                fill_color = (
+                    int(white_color[0] * (1 - color_progress) + red_color[0] * color_progress),
+                    int(white_color[1] * (1 - color_progress) + red_color[1] * color_progress),
+                    int(white_color[2] * (1 - color_progress) + red_color[2] * color_progress),
+                )
+                self.health_bar_fill.fill(fill_color)
+
+            else:
+                self.shake_x_offset = 0
+                self.shake_y_offset = 0
+
+                self.health_fill_width = int((self.health / 100) * self.health_fill_bar_size[0])
+                
+        else:
+            self.health_fill_width = int((self.health / 100) * self.health_fill_bar_size[0])
+
+        self.health_bar_fill.set_alpha(fill_alpha)
+        self.health_bar_bg.set_alpha(fill_alpha)
+
+    def update(self, state):
+        self.fire_cooldown -= state.delta_time
+        self.timer -= state.delta_time
+        
+        if self.start_damage_animation:
+            self.animate_enemy_taking_damage(state)
+
+        if state.current_time - self.last_update > self.animation_delay:
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.last_update = state.current_time  
+
+        target = None
+        further = None
+        if self.timer <= 0:
+            distances = self.closest_player_position(state)
+            self.current_target = target = distances[0]
+            further = distances[1]
+
+            self.timer = Enemy.POSITION_SEARCH_INTERVAL
+
+        self_center = pygame.Vector2(
+            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
+        )
+
+        dx = self.current_target.x - self_center.x
+        dy = self.current_target.y - self_center.y
+
+        if self.current_target is not None:
+            angle_radii = math.atan2(dy, dx)
+            self.indicator_angle = math.degrees(angle_radii)
+
+        if target is not None:
+            gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 250)
+            if gp1 is not None:
+                good_position = self.find_better_area(gp1,gp2,state.window_width,state.window_height)
+
+                dx = good_position[0] - self_center.x
+                dy = good_position[1] - self_center.y
+
+                self.move(dx, dy)
+            else:
+                self.velocity = [0,0]
+
+        ControllableObject.update(self)
+
+        if self.can_fire():
+            start_position = pygame.Vector2(
+                self.position[0] + self.size[0] / 2,
+                self.position[1] + self.size[1] / 2,
+            )
+            target_position = self.get_indicator_position()
+            Bullet.Instantiate(start_position, target_position, 2)
+            self.fire_cooldown = Enemy.FIRE_RATE
+            pass
+
+    def closest_player_position(self, state) -> pygame.Vector2:
+        self_center = pygame.Vector2(
+            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
+        )
+        player_one_center = pygame.Vector2(
+            state.player_one.position[0] + state.player_one.size[0] / 2,
+            state.player_one.position[1] + state.player_one.size[1] / 2,
+        )
+        player_one_distance = self_center.distance_to(player_one_center)
+        player_two_center = pygame.Vector2(
+            state.player_two.position[0] + state.player_two.size[0] / 2,
+            state.player_two.position[1] + state.player_two.size[1] / 2,
+        )
+        player_two_distance = self_center.distance_to(player_two_center)
+
+        # if abs(player_one_distance - player_two_distance) <= 5:
+        #     return self_center,(
+        #         pygame.Vector2(-(player_one_center.x - self_center.x),-(player_one_center.y - self_center.y)),
+        #         pygame.Vector2(-(player_two_center.x - self_center.x),-(player_two_center.y - self_center.y))
+        #         )
+
+        return (
+            (player_one_center, player_two_center)
+            if player_one_distance < player_two_distance
+            else (player_two_center, player_one_center)
+        )  # Favorizujemo enemy da targetuje igraca 2 :))
+
+    def find_optimal_position(self, player_one, radii_a, player_two, radii_b, radii_c):
+        x1, x2 = player_one.x, player_two.x
+        y1, y2 = player_one.y, player_two.y
+
+        d_a = radii_a + radii_c
+        d_b = radii_b + radii_c
+
+        d = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        if d >= d_a + d_b:
+            """No solution: Circles cannot intersect at their outer boundaries."""
+            return None
+            # return (player_one.x,player_one.y)
+        if d <= abs(d_a - d_b):
+            """No solution: One circle would be entirely inside the other."""
+            return None
+            # return (player_one.x,player_one.y)
+
+        a = (d_a**2 - d_b**2 + d**2) / (2 * d)
+        h = math.sqrt(d_a**2 - a**2)
+
+        p2_x = x1 + a * (x2 - x1) / d
+        p2_y = y1 + a * (y2 - y1) / d
+
+        x_int1 = p2_x + h * (y2 - y1) / d
+        y_int1 = p2_y - h * (x2 - x1) / d
+
+        x_int2 = p2_x - h * (y2 - y1) / d
+        y_int2 = p2_y + h * (x2 - x1) / d
+
+        c1 = (x_int1, y_int1)
+        c2 = (x_int2, y_int2)
+        return c1, c2
+
+    def clamp_area(self,area,min_x,max_x,min_y,max_y):
+        return (
+            (min_x if area[0]<min_x else (max_x if area[0]>max_x else area[0])),
+            (min_y if area[1]<min_y else (max_y if area[1]>max_y else area[1]))
+            )
+
+    def find_better_area(self, area1,area2,screen_width,screen_height):
+        better_area = area1
+
+        area1 = self.clamp_area(area1,0,screen_width,0,screen_height)
+        area2 = self.clamp_area(area2,0,screen_width,0,screen_height)
+
+        # Find optimal X
+        if area1[0] > area2[0]:
+            min_x = area2[0]
+            max_x = screen_width - area1[0]        
+            min_y = area2[1]
+            max_y = screen_height - area1[1]
+
+            if min_x > max_x and min_y > max_y:
+                return area2
+        elif area1[0] <= area2[0]:
+            min_x = area1[0]
+            max_x = screen_width - area2[0]        
+            min_y = area1[1]
+            max_y = screen_height - area2[1]
+        
+            if min_x > max_x and min_y > max_y:
+                return area1
+            
+
+        return better_area
+
+    def can_fire(self) -> bool:
+        return self.fire_cooldown <= 0
+
+    pass

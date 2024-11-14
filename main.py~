@@ -1,0 +1,209 @@
+from operator import index
+
+import pygame
+from pygame.locals import *
+
+import math
+
+from entities.player import Player
+from entities.bullet import Bullet
+
+pygame.init()
+
+# Screen setup
+screen_width, screen_height = 576*2, 324*2
+screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE | pygame.SCALED)
+surface = pygame.Surface((screen_width,screen_height), pygame.SRCALPHA)
+pygame.display.set_caption("Break the Floor!")
+
+previus_time = 0.
+delta_time = 0.
+
+# Load background images
+background_images = [
+    pygame.image.load(f"assets/images/background/background_{i}.png")
+    for i in range(1, 5)
+]
+
+# Load players
+player_one = Player([f"assets/images/player_one/player_{i}.png" for i in range(1, 9)], (220, 212))
+player_two = Player([f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50))
+
+# Parallax settings
+parallax_speeds = [0.2, 0.3, 0.4, 0.5]
+x_positions = [0, 0, 0, 0]
+
+# Bullet settings
+bullets = []
+
+bullet_fire_cooldown = 0.5
+player_one_fire_cooldown = 0.
+player_two_fire_cooldown = 0.
+bullet_delete_time = 5.0
+
+# Initialize joysticks
+pygame.joystick.init()
+joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+for joystick in joysticks:
+    joystick.init()
+
+# Render background with parallax
+def render_background(screen):
+    for i, background_image in enumerate(background_images):
+        speed = parallax_speeds[i]
+        x_positions[i] -= speed
+        if x_positions[i] <= -screen_width:
+            x_positions[i] = 0
+        screen.blit(background_image, (x_positions[i], 0))
+        screen.blit(background_image, (x_positions[i] + screen_width, 0))
+
+
+# Players input
+def handle_movement(player, up, left, down, right, joystick_index, target_left, target_right):
+    x = y = 0
+
+    if up:
+        y -= 1
+    if down:
+        y += 1
+    if left:
+        x -= 0.7
+    if right:
+        x += 1
+
+    player.move(x, y)
+
+    if len(joysticks) > joystick_index:
+        joystick = joysticks[joystick_index]
+        x_axis = joystick.get_axis(0)
+        y_axis = joystick.get_axis(1)
+        player.move(x_axis, y_axis)
+
+        x_axis = joystick.get_axis(2)
+        y_axis = joystick.get_axis(3)
+        angle_rad = math.atan2(-y_axis, x_axis)
+        angle_deg = math.degrees(angle_rad)
+
+        if(x_axis > 0.2 or x_axis < -0.2 or y_axis > 0.2 or y_axis < -0.2):
+            player.set_indicator_angle(-angle_deg, 2)
+
+    if target_left:
+        player.adjust_indicator_angle(-5)
+    if target_right:
+         player.adjust_indicator_angle(5)
+
+    player.check_edges(screen_width, screen_height)
+
+def fire_bullet(player, index):
+    start_position = pygame.Vector2(player.position[0] + player.size[0] / 2, player.position[1] + player.size[1] / 2)
+    target_position = player.get_indicator_position()
+
+    if index == 0:
+            bullets.append([Bullet("assets/images/bullet_one.png", start_position, target_position, 0), 0.])
+    elif index == 1:
+            bullets.append([Bullet("assets/images/bullet_two.png", start_position, target_position, 1), 0.])
+
+
+def handle_input():
+
+    global space_pressed, backspace_pressed, player_one_fire_cooldown, player_two_fire_cooldown
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and not space_pressed:
+                if player_two_fire_cooldown <= 0:
+                    fire_bullet(player_one, 0)
+                    player_two_fire_cooldown = bullet_fire_cooldown
+                space_pressed = True
+            if event.key == pygame.K_BACKSPACE and not backspace_pressed:
+                if player_two_fire_cooldown <= 0:
+                    fire_bullet(player_two, 1)
+                    player_two_fire_cooldown = bullet_fire_cooldown
+                backspace_pressed = True
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                space_pressed = False
+            if event.key == pygame.K_BACKSPACE:
+                backspace_pressed = False
+
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == 5 or event.button == 10:
+                if event.joy == 0:
+                    if player_one_fire_cooldown <= 0:
+                        fire_bullet(player_one, 0)
+                        player_one_fire_cooldown = bullet_fire_cooldown
+                elif event.joy == 1:
+                    if player_two_fire_cooldown <= 0:
+                        fire_bullet(player_two, 1)
+                        player_two_fire_cooldown = bullet_fire_cooldown
+
+# Gameloop
+running = True
+
+
+def bullet_check_player_collision(bullet, player_one, player_two):
+
+    if(bullet.spawned_by == 1):
+        if bullet.position[0] >= player_one.position[0] - player_one.size[0] / 2 and bullet.position[0] <= player_one.position[0] + player_one.size[0] / 2:
+            if bullet.position[1] >= player_one.position[1] - player_one.size[1] / 2 and bullet.position[1] <= player_one.position[1] + player_one.size[1] / 2:
+                #player_one.kill()
+                print("player one killed")
+                player_one.take_damage(10)
+    else:
+        if bullet.position[0] >= player_two.position[0] - player_two.size[0] / 2 and bullet.position[0] <= player_two.position[0] + player_two.size[0] / 2:
+            if bullet.position[1] >= player_two.position[1] - player_two.size[1] / 2 and bullet.position[1] <= player_two.position[1] + player_two.size[1] / 2:
+                #player_one.kill()
+                print("player two killed")
+                player_two.take_damage(10)
+
+
+while running:
+    current_time = pygame.time.get_ticks()
+    delta_time = (current_time - previus_time) / 1000.0
+    previus_time = current_time
+
+    space_pressed = False
+    backspace_pressed = False
+
+    handle_input()
+
+    player_one_fire_cooldown -= delta_time
+    player_two_fire_cooldown -= delta_time
+
+    keys = pygame.key.get_pressed()
+
+    handle_movement(player_one, keys[pygame.K_w], keys[pygame.K_a], keys[pygame.K_s], keys[pygame.K_d], 0, keys[pygame.K_e], keys[pygame.K_r])
+    handle_movement(player_two, keys[pygame.K_UP], keys[pygame.K_LEFT], keys[pygame.K_DOWN], keys[pygame.K_RIGHT], 1, keys[pygame.K_k], keys[pygame.K_l])
+
+    surface.fill((0, 0, 0, 0))
+
+    render_background(screen)
+
+    player_one.check_other_player_edges(player_two)
+
+    player_one.update(current_time)
+    player_one.render(surface)
+    player_two.update(current_time)
+    player_two.render(surface)
+
+    player_one.update_ui()
+    player_two.update_ui()
+
+
+    for bullet in bullets[:]:
+        bullet[1] += delta_time
+        if bullet[1] >= bullet_delete_time:
+            bullets.remove(bullet)
+        else:
+            bullet_check_player_collision(bullet[0], player_one, player_two)
+            bullet[0].update()
+            bullet[0].render(surface)
+
+    screen.blit(surface, (0, 0))
+
+    pygame.display.update()
+
+pygame.quit()

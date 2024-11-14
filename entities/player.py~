@@ -1,0 +1,178 @@
+import pygame
+import math
+import time
+
+
+class Player:
+    def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
+        self.frames = [pygame.transform.scale(pygame.image.load(path), size).convert_alpha() for path in image_paths]
+        self.position = list(position)
+        self.size = size
+        self.animation_delay = animation_delay
+        self.current_frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.speed = 0.2
+        self.max_speed = 2
+        self.acceleration = 0.05
+        self.friction = 0.02
+        self.velocity = [0, 0]
+        self.health = 100
+        self.previous_health = 100
+        self.health_bar_size_bg = (110, 30)
+        self.health_bar_size = (self.health_bar_size_bg[0] * 0.9, self.health_bar_size_bg[1] * 0.6)
+        self.health_bar_bg = pygame.transform.scale(
+            pygame.image.load("assets/images/health_bar/health_bar_background.png").convert_alpha(),
+            self.health_bar_size_bg
+        )
+        self.health_bar_fill = pygame.transform.scale(pygame.image.load("assets/images/health_bar/health_bar_fill.png").convert_alpha(),
+                                self.health_bar_size)
+        self.is_invincible = False
+        self.invincible_start_time = 0
+        self.blink_interval = 100
+        self.last_blink_time = 0
+        self.indicator_radius = 30
+        self.indicator_angle = 0
+        self.indicator_color = (255, 255, 255)
+        self.damage_animation_start_time = None
+        self.damage_animation_duration = 300
+
+    def take_damage(self, damage):
+        if not self.is_invincible:
+            self.previous_health = self.health
+            self.health -= damage
+            if self.health <= 0:
+                self.health = 0
+            else:
+                self.is_invincible = True
+                self.invincible_start_time = pygame.time.get_ticks()
+            self.damage_animation_start_time = pygame.time.get_ticks()
+
+    def update(self, current_time):
+        if self.is_invincible:
+            if current_time - self.invincible_start_time >= 3000:
+                self.is_invincible = False
+                for frame in self.frames:
+                    frame.set_alpha(255)
+            else:
+                if current_time - self.last_blink_time >= self.blink_interval:
+                    for frame in self.frames:
+                        frame.set_alpha(128 if frame.get_alpha() == 255 else 255)
+                    self.last_blink_time = current_time
+
+        if current_time - self.last_update > self.animation_delay:
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.last_update = current_time
+
+        for i in range(2):
+            if self.velocity[i] > 0:
+                self.velocity[i] = max(0, self.velocity[i] - self.friction)
+            elif self.velocity[i] < 0:
+                self.velocity[i] = min(0, self.velocity[i] + self.friction)
+
+        self.position[0] += self.velocity[0]
+        self.position[1] += self.velocity[1]
+
+    def update_ui(self):
+        current_time = pygame.time.get_ticks()
+        if self.damage_animation_start_time:
+            elapsed = current_time - self.damage_animation_start_time
+            if elapsed < self.damage_animation_duration:
+                start_width = int((self.previous_health / 100) * self.health_bar_size[0])
+                end_width = int((self.health / 100) * self.health_bar_size[0])
+                progress = elapsed / self.damage_animation_duration
+                self.health_fill_width = int(start_width + (end_width - start_width) * progress)
+            else:
+                self.health_fill_width = int((self.health / 100) * self.health_bar_size[0])
+                self.damage_animation_start_time = None
+        else:
+            self.health_fill_width = int((self.health / 100) * self.health_bar_size[0])
+
+    def render(self, screen):
+        self.update_ui()
+
+        # Draw health bar background
+        health_bar_position = (self.position[0] - self.health_bar_size_bg[0] // 2, self.position[1] - 40)
+        screen.blit(self.health_bar_bg, health_bar_position)
+
+        # Draw health bar fill
+        fill_position = (
+        health_bar_position[0] + 5, health_bar_position[1] + 5)  # Padding to center the fill in background
+        health_fill_rect = pygame.Rect(fill_position, (self.health_fill_width, self.health_bar_size[1]))
+        screen.blit(self.health_bar_fill, health_fill_rect, (0, 0, self.health_fill_width, self.health_bar_size[1]))
+
+        # Draw player
+        self.draw_indicator(screen)
+        screen.blit(self.frames[self.current_frame], self.position)
+
+    def check_edges(self, width, height):
+        offset_x, offset_y = 50, 30
+        if self.position[0] + (self.size[0] / 2) + offset_x > width:
+            self.position[0] = width - (self.size[0] / 2) - offset_x
+        elif self.position[0] + (self.size[0] / 2) - offset_x < 0:
+            self.position[0] = 0 - (self.size[0] / 2) + offset_x
+        if self.position[1] + (self.size[1] / 2) + offset_y > height:
+            self.position[1] = height - (self.size[1] / 2) - offset_y
+        elif self.position[1] + (self.size[1] / 2) - offset_y < 0:
+            self.position[1] = 0 - (self.size[1] / 2) + offset_y
+
+    def check_other_player_edges(self, other_player):
+        self_center = pygame.Vector2(self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2)
+        other_center = pygame.Vector2(other_player.position[0] + other_player.size[0] / 2,
+                                      other_player.position[1] + other_player.size[1] / 2)
+        distance = self_center.distance_to(other_center)
+        self_radius = min(self.size) / 2
+        other_radius = min(other_player.size) / 2
+        min_distance = self_radius + other_radius
+        if distance < min_distance:
+            overlap = min_distance - distance
+            if distance == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = (self_center - other_center).normalize()
+            self.position[0] += direction.x * (overlap / 2)
+            self.position[1] += direction.y * (overlap / 2)
+            other_player.position[0] -= direction.x * (overlap / 2)
+            other_player.position[1] -= direction.y * (overlap / 2)
+
+    def move(self, dx, dy):
+        if dx != 0:
+            self.velocity[0] += dx * self.acceleration
+            self.velocity[0] = max(-self.max_speed, min(self.velocity[0], self.max_speed))
+        if dy != 0:
+            self.velocity[1] += dy * self.acceleration
+            self.velocity[1] = max(-self.max_speed, min(self.velocity[1], self.max_speed))
+
+    def adjust_indicator_angle(self, angle_change):
+        self.indicator_angle = (self.indicator_angle + angle_change) % 360
+
+    def set_indicator_angle(self, target_angle, speed):
+        angle_diff = (target_angle - self.indicator_angle + 180) % 360 - 180
+        if abs(angle_diff) < speed:
+            self.indicator_angle = target_angle
+        else:
+            self.indicator_angle += speed * (1 if angle_diff > 0 else -1)
+            self.indicator_angle %= 360
+
+    def get_indicator_position(self):
+        center_x, center_y = (self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2)
+        x = center_x + self.indicator_radius * math.cos(math.radians(self.indicator_angle))
+        y = center_y + self.indicator_radius * math.sin(math.radians(self.indicator_angle))
+        return pygame.Vector2(x, y)
+
+    def draw_indicator(self, screen):
+        start_position = pygame.Vector2(self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2)
+        target_position = self.get_indicator_position()
+        direction = (target_position - start_position).normalize()
+        distance = (target_position - start_position).length()
+        dash_length = 4
+        gap_length = 3
+        total_segment_length = dash_length + gap_length
+        num_segments = int(distance // total_segment_length)
+        pygame.draw.circle(screen, (0, 0, 0, 150), start_position, 21, width=1)
+        pygame.draw.circle(screen, (255, 255, 255, 150), start_position, 20, width=1)
+        for i in range(num_segments):
+            s = i + 5
+            dash_start = start_position + direction * (s * total_segment_length)
+            dash_end = dash_start + direction * dash_length
+            pygame.draw.line(screen, (0, 0, 0, 150), dash_start, dash_end, 2)
+            pygame.draw.line(screen, self.indicator_color, dash_start, dash_end, 1)
