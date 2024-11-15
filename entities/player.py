@@ -13,17 +13,22 @@ class Player(ControllableObject):
     INVISIBLE_TIME_MS = 1000
     VULNERABLE_TIME_MS = 3000
 
+
     def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
-        super().__init__(position, size)
+        self.lives = 3
+        super().__init__(position, True, size)
 
         self.frames = [
             pygame.transform.scale(pygame.image.load(path), size).convert_alpha()
             for path in image_paths
         ]
+
+        
+
         self.animation_delay = animation_delay
         self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
-        self.lives = 3
+       
         self.previous_health = 100
         self.bomb_count = 0
 
@@ -95,6 +100,7 @@ class Player(ControllableObject):
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
                     self.lives -= 1
+                    self.get_component(HealthBarUI).on_death()
                     if self.lives > 0:
                         self.reset()
                     else:
@@ -144,7 +150,7 @@ class Enemy(ControllableObject):
     current_target = None
 
     def __init__(self, image_paths, _position, _size=(128, 72), animation_delay=100):
-        ControllableObject.__init__(self, _position, _size)
+        ControllableObject.__init__(self, _position, False, _size)
         self.frames = [
             pygame.transform.scale(pygame.image.load(path), _size).convert_alpha()
             for path in image_paths

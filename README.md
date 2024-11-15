@@ -13,7 +13,7 @@
 
 ## Player
 - [x] Dodati 3 zivota
-- [ ] Dodati UI za 3 zivota 
+- [x] Dodati UI za 3 zivota 
 - [x] Na smrt resetovati i staviti nevidljivost na malo duzi period 
 - [x] Dodati animaciju ili efekat eksplozije kada player umre
 - [x] Postaviti da kada pokupi bombu prvi metak koji ispaljuje bude bomba a tek posle toka obican bullet

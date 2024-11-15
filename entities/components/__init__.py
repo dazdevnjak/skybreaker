@@ -92,6 +92,7 @@ class HealthBarUI(Component):
     def __init__(self) -> None:
         self.health_bar_size = (25, 7)
         self.health_fill_bar_size = (20, 3)
+        self.lives_bar_size = (19, 6)
         self.shake_x_offset = 0
         self.shake_y_offset = 0
 
@@ -106,10 +107,21 @@ class HealthBarUI(Component):
             self.health_fill_bar_size,
         )
 
+        self.lives_bar = [
+           pygame.transform.scale(pygame.image.load(f"assets/images/health_bar/lives_{i}.png").convert_alpha(), self.lives_bar_size)
+            for i in range(1, 4)
+        ]
+        
+        self.lives_left = 2
+        self.live_bar = self.lives_bar[-1]
         self.damage_anim = False
         self.anim_start_time = 0
 
         super().__init__()
+
+    def on_death(self):
+        if self.lives_left > 0:
+            self.lives_left -= 1
 
     def on_load(self, parent):
         pass
@@ -183,6 +195,15 @@ class HealthBarUI(Component):
         )
 
         state.surface.blit(self.health_bar_bg, health_bar_position)
+
+        if parent.is_player:
+            self.live_bar = self.lives_bar[self.lives_left]
+            live_bar_position = (
+                parent.position[0] + 80 + self.shake_x_offset,
+                parent.position[1] + 2 + self.shake_y_offset,
+            )
+
+            state.surface.blit(self.live_bar, live_bar_position)
 
         fill_position = (
             health_bar_position[0] + 2,

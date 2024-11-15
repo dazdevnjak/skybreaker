@@ -276,11 +276,17 @@ class ControllableObject:
 
     health: int = 100
 
-    def __init__(self, _position, _size=(128, 72)) -> None:
+    is_player: bool
+    lives_left: int
+
+    def __init__(self, _position, is_player, lives_left, _size=(128, 72)) -> None:
         self.components: list[Component] = []
+
+        self.is_player = is_player
 
         self.position = list(_position)
         self.size = _size
+        self.lives_left = lives_left
 
         self.speed = 0.2
         self.max_speed = 2

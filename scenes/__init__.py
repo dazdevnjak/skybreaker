@@ -74,10 +74,11 @@ class GameScene(Scene):
         # Load players
         self.state.player_one = Player(
             [f"assets/images/player_one/player_{i}.png" for i in range(1, 9)],
-            (220, 212),
+            (220, 212)
         )
         self.state.player_two = Player(
-            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50)
+            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], 
+            (220, 50)
         )
         Executor.wait(GameScene.ENEMY_SPAWN_TIME, self.spawn_enemy)
         Executor.wait(GameScene.ROCKETS_START_TIME, self.spawn_rockets)
