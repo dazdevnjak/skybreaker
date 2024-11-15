@@ -6,7 +6,7 @@ from utility import *
 from entities.player import Player, Enemy
 from entities.bullet import Bullet, Bomb
 from entities.rocket import Rocket
-from entities.collectable import Collectable
+from entities.collectable import Collectable, BombItem
 
 
 class Scene:
@@ -125,8 +125,13 @@ class GameScene(Scene):
                     self.state.window_width, self.state.window_height
                 )
             self.state.enemy.render(self.state)
-            if self.state.enemy.health <= 0:
-                self.state.enemy = None  # Removing enemy
+            if self.state.enemy.health <= 0 and not self.state.enemy.animate_explosion:
+                self_center = pygame.Vector2(
+                    self.state.enemy.position[0] + self.state.enemy.size[0] / 2, self.state.enemy.position[1] + self.state.enemy.size[1] / 2
+                )
+                BombItem.Instantiate(self_center)
+                self.state.enemy = None  
+                # Removing enemy
 
         # self.state.player_one.update_ui()
         # self.state.player_two.update_ui()
@@ -253,7 +258,7 @@ class GameScene(Scene):
     def spawn_enemy(self):
         def spawn():
             self.state.enemy = Enemy(
-                [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)],
+                [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 5)],
                 (-50, 100),
             )
             pass

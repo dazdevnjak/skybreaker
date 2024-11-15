@@ -33,9 +33,10 @@ class Player(ControllableObject):
             ).convert_alpha()
             for i in range(1, 7)
         ]
-        self.current_explosion_frame = random.randrange(0, len(self.explosion_frames))
+        self.current_explosion_frame = 0
         self.animate_explosion = False
         self.last_animatet_explosion = 0
+        self.explosion_animation_delay = 200
 
         self.is_invincible = False
         self.is_vulnerable = False
@@ -89,10 +90,16 @@ class Player(ControllableObject):
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = current_time
         if self.animate_explosion:
-            if current_time - self.last_animatet_explosion > self.animation_delay:
+            if current_time - self.last_animatet_explosion > self.explosion_animation_delay:
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
+                    self.lives -= 1
+                    if self.lives > 0:
+                        self.reset()
+                    else:
+                        # TODO : Game should end here
+                        print("End game!")
                     self.current_explosion_frame = 0
                     self.last_animatet_explosion = 0
                 else:
@@ -119,13 +126,6 @@ class Player(ControllableObject):
 
     def on_death(self) -> None:
         self.animate_explosion = True
-        self.lives -= 1
-        if self.lives > 0:
-            self.reset()
-        else:
-            # TODO : Game should end here
-            print("End game!")
-            pass
         pass
 
     def reset(self) -> None:
@@ -173,6 +173,17 @@ class Enemy(ControllableObject):
         self.speed = self.max_speed / 6
         Executor.wait(500, self.activate, self.in_screen)
 
+        self.explosion_frames = [
+            pygame.transform.scale(
+                pygame.image.load(f"assets/images/explosion/explosion_{i}.png"), _size
+            ).convert_alpha()
+            for i in range(1, 7)
+        ]
+        self.current_explosion_frame = random.randrange(0, len(self.explosion_frames))
+        self.animate_explosion = False
+        self.last_animatet_explosion = 0
+        self.explosion_animation_delay = 200
+
     def take_damage(self, damage):
         self.previous_health = self.health
         self.health -= damage
@@ -218,6 +229,11 @@ class Enemy(ControllableObject):
         super().render(state)
         screen.blit(self.frames[self.current_frame], self.position)
 
+        if self.animate_explosion:
+            screen.blit(
+                self.explosion_frames[self.current_explosion_frame], self.position
+            )
+
     def lambda_search(self):
         distances = self.closest_player_position(self.state)
         self.current_target = self.target = distances[0]
@@ -234,6 +250,16 @@ class Enemy(ControllableObject):
         if state.current_time - self.last_update > self.animation_delay:
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = state.current_time
+
+        if self.animate_explosion:
+            if state.current_time - self.last_animatet_explosion > self.explosion_animation_delay:
+                self.current_explosion_frame = self.current_explosion_frame + 1
+                if self.current_explosion_frame == len(self.explosion_frames):
+                    self.animate_explosion = False
+                    self.current_explosion_frame = 0
+                    self.last_animatet_explosion = 0
+                else:
+                    self.last_animatet_explosion = state.current_time
 
         if self.active == True:
             target = self.target
@@ -378,10 +404,7 @@ class Enemy(ControllableObject):
         return self.fire_cooldown <= 0
 
     def on_death(self) -> None:
-        self_center = pygame.Vector2(
-            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
-        )
-        BombItem.Instantiate(self_center)
+        self.animate_explosion = True
         pass
 
     pass

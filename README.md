@@ -21,8 +21,8 @@
 ## Enemy
 - [x] Stvaranje posle 15-ak sekundi(proizvoljno) / neki tajmer u main-u koji ce inicijalizovati vreme koje treba da istekne da bi se neprijatelj stvorio(Svuda dodati proveru za None)
 - [x] Napravljena je klasa za pickup(collectable) potrebno je dodati da kada se neprijatelj unisti on ispusti pickup koji kada neki od igraca pokupi on dobije jednu BOBMU.
-- [ ] Napraviti novi sprite sheet za neprijatelja
-- [ ] Dodati animaciju ili efekat ekspolzije kada enemy umre
+- [x] Napraviti novi sprite sheet za neprijatelja
+- [x] Dodati animaciju ili efekat ekspolzije kada enemy umre
 - [x] Napraviti da se neprijatelj stvara van ekrana i ulazi u njega, a ne da se stvori na sredini ekrana
 - [x] Neprijatelj se ucitava na drugom Thread-u kako bi izbegli stutter
 

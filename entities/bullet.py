@@ -133,10 +133,6 @@ class Bomb:
         image_path = "assets/images/bomb.png"
         bomb = Bomb(image_path, start_position, target_position, index)
         Bomb._instance = bomb
-        # Executor.wait(
-        #     Bomb.BOMB_DELETE_TIME,
-        #     Bomb.Destroy_bomb
-        # )
 
     @staticmethod
     def Update(screen, window_height, player_one, player_two):
@@ -146,8 +142,10 @@ class Bomb:
         rect = Bomb._instance.render(screen)
         if Bomb._instance.position.y > window_height:
             Bomb._instance = None
+            return
         if Bomb.Check_collision(rect, player_one, player_two):
             Bomb._instance = None
+            return
 
     @staticmethod
     def Check_collision(bomb_rect, player_one, player_two):
