@@ -1,35 +1,7 @@
 import pygame
 import math
 
-
-class GameState:
-    previous_time: float = 0.0
-    current_time: float = 0.0
-    delta_time: float = 0.0
-
-    player_one = None
-    player_two = None
-
-    enemy = None
-
-    surface = None
-    screen = None
-
-    window_width = None
-    window_height = None
-
-    def __init__(self, _screen, _surface) -> None:
-        self.surface = _surface
-        self.screen = _screen
-        pass
-
-    def reset(self, time: tuple[float, float, float]) -> None:
-        self.previous_time = time[0]
-        self.current_time = time[1]
-        self.delta_time = time[2]
-
-        pass
-
+from entities.components import *
 
 KEYBOARD_PLAYER_ONE_CONTROLS = [
     pygame.K_w,
@@ -71,7 +43,9 @@ class Executor:
             self.__timer = pygame.time.get_ticks()
 
         def update(self, current) -> bool:
-            return (current - self.__timer) >= self.__time and (self.__condition() if self.__condition is not None else True)
+            if self.__condition is not None:
+                return (current - self.__timer) >= self.__time and self.__condition()
+            return (current - self.__timer) >= self.__time
 
         def invoke(self) -> None:
             self.__method()
@@ -94,12 +68,12 @@ class Executor:
         pass
 
     @staticmethod
-    def wait(time: float, method, condition = None):
+    def wait(time: float, method, condition=None):
         Executor.one_time_method.append(Executor.ExecState(time, method, condition))
         pass
 
     @staticmethod
-    def repeat(time: float, method, condition = None):
+    def repeat(time: float, method, condition=None):
         Executor.repeat_method.append(Executor.ExecState(time, method, condition))
         pass
 
@@ -120,6 +94,35 @@ class Executor:
             if exec_state.update(current):
                 exec_state.invoke()
                 exec_state.reset_timer()
+        pass
+
+
+class GameState:
+    previous_time: float = 0.0
+    current_time: float = 0.0
+    delta_time: float = 0.0
+
+    player_one = None
+    player_two = None
+
+    enemy = None
+
+    surface = None
+    screen = None
+
+    window_width = None
+    window_height = None
+
+    def __init__(self, _screen, _surface) -> None:
+        self.surface = _surface
+        self.screen = _screen
+        pass
+
+    def reset(self, time: tuple[float, float, float]) -> None:
+        self.previous_time = time[0]
+        self.current_time = time[1]
+        self.delta_time = time[2]
+
         pass
 
 
@@ -271,13 +274,11 @@ class ControllableObject:
 
     velocity: list[int]
 
-    indicator_radius: int = 0
-    indicator_angle: int = 0
-    indicator_color: tuple[int, int, int] = (255, 255, 255)
-
     health: int = 100
 
     def __init__(self, _position, _size=(128, 72)) -> None:
+        self.components: list[Component] = []
+
         self.position = list(_position)
         self.size = _size
 
@@ -295,12 +296,38 @@ class ControllableObject:
             self.size[1] / 2.0,
         )
 
-        self.indicator_radius = 30
+        self.add_component(AimIndicator)
 
         self.health = 100
         pass
 
-    def update(self):
+    @staticmethod
+    def create_instance(cls_type, *args, **kwargs):
+        return cls_type(*args, **kwargs)
+
+    def add_component(self, component_type: type):
+        component = ControllableObject.create_instance(component_type)
+        component.on_load(self)
+        self.components.append(component)
+        return component
+
+    def get_component(self, component_type: type):
+        for component in self.components:
+            if isinstance(component, component_type):
+                return component
+        return None
+
+    def remove_component(self, component_type: type) -> bool:
+        for component in self.components:
+            if isinstance(component, component_type):
+                self.components.remove(component)
+                return True
+        return False
+
+    def update(self, state):
+        for component in self.components:
+            component.on_update(state, self)
+
         for i in range(2):
             if self.velocity[i] > 0:
                 self.velocity[i] = max(0, self.velocity[i] - self.friction)
@@ -314,10 +341,11 @@ class ControllableObject:
         self.hitbox_rect.y = self.position[1] + self.size[1] / 4.0
         pass
 
-    def render(self, screen):
+    def render(self, state):
         # Render Hitbox TODO : Skloni ovo kasnije
         # pygame.draw.rect(screen, (255, 0, 0, 64), self.hitbox_rect)
-        self.draw_indicator(screen)
+        for component in self.components:
+            component.on_render(state, self)
         pass
 
     def move(self, dx, dy):
@@ -331,53 +359,6 @@ class ControllableObject:
             self.velocity[1] = max(
                 -self.max_speed, min(self.velocity[1], self.max_speed)
             )
-        pass
-
-    def adjust_indicator_angle(self, angle_change):
-        self.indicator_angle = (self.indicator_angle + angle_change) % 360
-        pass
-
-    def set_indicator_angle(self, target_angle, speed):
-        angle_diff = (target_angle - self.indicator_angle + 180) % 360 - 180
-        if abs(angle_diff) < speed:
-            self.indicator_angle = target_angle
-        else:
-            self.indicator_angle += speed * (1 if angle_diff > 0 else -1)
-            self.indicator_angle %= 360
-        pass
-
-    def get_indicator_position(self):
-        center_x, center_y = (
-            self.position[0] + self.size[0] / 2,
-            self.position[1] + self.size[1] / 2,
-        )
-        x = center_x + self.indicator_radius * math.cos(
-            math.radians(self.indicator_angle)
-        )
-        y = center_y + self.indicator_radius * math.sin(
-            math.radians(self.indicator_angle)
-        )
-        return pygame.Vector2(x, y)
-
-    def draw_indicator(self, screen):
-        start_position = pygame.Vector2(
-            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
-        )
-        target_position = self.get_indicator_position()
-        direction = (target_position - start_position).normalize()
-        distance = (target_position - start_position).length()
-        dash_length = 4
-        gap_length = 3
-        total_segment_length = dash_length + gap_length
-        num_segments = int(distance // total_segment_length)
-        pygame.draw.circle(screen, (0, 0, 0, 150), start_position, 21, width=1)
-        pygame.draw.circle(screen, (255, 255, 255, 150), start_position, 20, width=1)
-        for i in range(num_segments):
-            s = i + 5
-            dash_start = start_position + direction * (s * total_segment_length)
-            dash_end = dash_start + direction * dash_length
-            pygame.draw.line(screen, (0, 0, 0, 150), dash_start, dash_end, 2)
-            pygame.draw.line(screen, self.indicator_color, dash_start, dash_end, 1)
         pass
 
     def check_edges(self, width, height):

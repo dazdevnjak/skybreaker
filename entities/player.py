@@ -1,8 +1,9 @@
 import pygame
 import math
-from utility import ControllableObject,Executor
+from utility import *
 from entities.bullet import Bullet
 from entities.collectable import BombItem
+from entities.components import *
 import random
 
 
@@ -13,7 +14,8 @@ class Player(ControllableObject):
     VULNERABLE_TIME_MS = 3000
 
     def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
-        ControllableObject.__init__(self, position, size)
+        super().__init__(position, size)
+
         self.frames = [
             pygame.transform.scale(pygame.image.load(path), size).convert_alpha()
             for path in image_paths
@@ -41,8 +43,11 @@ class Player(ControllableObject):
         )
 
         self.explosion_frames = [
-        pygame.transform.scale(pygame.image.load(f"assets/images/explosion/explosion_{i}.png"), size).convert_alpha()
-        for i in range(1, 7) ]
+            pygame.transform.scale(
+                pygame.image.load(f"assets/images/explosion/explosion_{i}.png"), size
+            ).convert_alpha()
+            for i in range(1, 7)
+        ]
         self.current_explosion_frame = random.randrange(0, len(self.explosion_frames))
         self.animate_explosion = False
         self.last_animatet_explosion = 0
@@ -59,7 +64,7 @@ class Player(ControllableObject):
         self.bomb_count += 1
 
     def throw_bomb(self):
-        self.bomb_count = max(self.bomb_count -1, 0)
+        self.bomb_count = max(self.bomb_count - 1, 0)
 
     def take_damage(self, damage):
         if not self.is_invincible:
@@ -101,15 +106,16 @@ class Player(ControllableObject):
             self.last_update = current_time
         if self.animate_explosion:
             if current_time - self.last_animatet_explosion > self.animation_delay:
-                self.current_explosion_frame = (self.current_explosion_frame + 1)
-                if(self.current_explosion_frame == len(self.explosion_frames)):
+                self.current_explosion_frame = self.current_explosion_frame + 1
+                if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
                     self.current_explosion_frame = 0
                     self.last_animatet_explosion = 0
                 else:
                     self.last_animatet_explosion = current_time
 
-        ControllableObject.update(self)
+        super().update(state)
+        # ControllableObject.update(self, state)
 
     def update_ui(self):
         current_time = pygame.time.get_ticks()
@@ -169,7 +175,8 @@ class Player(ControllableObject):
         self.health_bar_fill.set_alpha(fill_alpha)
         self.health_bar_bg.set_alpha(fill_alpha)
 
-    def render(self, screen):
+    def render(self, state):
+        screen = state.surface
         self.update_ui()
 
         health_bar_position = (
@@ -194,11 +201,13 @@ class Player(ControllableObject):
             (0, 0, self.health_fill_width, self.health_bar_size[1]),
         )
 
-        ControllableObject.render(self, screen)
+        super().render(state)
         screen.blit(self.frames[self.current_frame], self.position)
 
-        if(self.animate_explosion):
-            screen.blit(self.explosion_frames[self.current_explosion_frame], self.position)
+        if self.animate_explosion:
+            screen.blit(
+                self.explosion_frames[self.current_explosion_frame], self.position
+            )
 
     def can_fire(self) -> bool:
         return self.fire_cooldown <= 0
@@ -228,7 +237,7 @@ class Player(ControllableObject):
 
 class Enemy(ControllableObject):
     fire_cooldown = 0.0
-    POSITION_SEARCH_INTERVAL: float = 200 # 200ms = 0.2s
+    POSITION_SEARCH_INTERVAL: float = 200  # 200ms = 0.2s
     FIRE_RATE = 3
     current_target = None
 
@@ -273,8 +282,9 @@ class Enemy(ControllableObject):
         self.further = None
 
         self.active = False
-        self.velocity[0] = 1
-        Executor.wait(500,self.activate,self.in_screen)
+        self.velocity[0] = 5
+        self.speed = self.max_speed / 6
+        Executor.wait(500, self.activate, self.in_screen)
 
     def take_damage(self, damage):
         self.previous_health = self.health
@@ -285,12 +295,13 @@ class Enemy(ControllableObject):
         self.damage_animation_start_time = pygame.time.get_ticks()
         self.start_damage_animation = True
 
-    def in_screen(self)->bool:
-        return self.position[0] >= 20
-    
+    def in_screen(self) -> bool:
+        return self.position[0] >= 120
+
     def activate(self):
         self.active = True
         self.velocity[0] = 0
+        self.speed = self.max_speed
 
     def animate_enemy_taking_damage(self, state):
         current_time = state.current_time
@@ -313,7 +324,8 @@ class Enemy(ControllableObject):
             for frame in self.frames:
                 frame.set_alpha(alpha_value)
 
-    def render(self, screen):
+    def render(self, state):
+        screen = state.surface
         self.update_ui()
 
         health_bar_position = (
@@ -339,7 +351,7 @@ class Enemy(ControllableObject):
         )
 
         # TODO : OVDE
-        ControllableObject.render(self, screen)
+        super().render(state)
         screen.blit(self.frames[self.current_frame], self.position)
 
     def update_ui(self):
@@ -417,48 +429,47 @@ class Enemy(ControllableObject):
             self.last_update = state.current_time
 
         if self.active == True:
-            print('Active called')
-        target = self.target
-        further = self.further
-        Executor.wait(Enemy.POSITION_SEARCH_INTERVAL,self.lambda_search)
+            target = self.target
+            further = self.further
+            Executor.wait(Enemy.POSITION_SEARCH_INTERVAL, self.lambda_search)
 
-        self_center = pygame.Vector2(
-            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
-        )
+            self_center = pygame.Vector2(
+                self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
+            )
 
-        dx = 0
-        dy = 0
+            dx = 0
+            dy = 0
 
-        if self.current_target is not None:
-            dx = self.current_target.x - self_center.x
-            dy = self.current_target.y - self_center.y
-        
-            angle_radii = math.atan2(dy, dx)
-            self.indicator_angle = math.degrees(angle_radii)
+            if self.current_target is not None:
+                dx = self.current_target.x - self_center.x
+                dy = self.current_target.y - self_center.y
 
-        if target is not None:
-            gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 150)
-            if gp1 is not None:
-                good_position = self.find_better_area(
-                    gp1, gp2, state.window_width, state.window_height
-                )
+                angle_radii = math.atan2(dy, dx)
+                self.indicator_angle = math.degrees(angle_radii)
 
-                dx = good_position[0] - self_center.x
-                dy = good_position[1] - self_center.y
+            if target is not None:
+                gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 150)
+                if gp1 is not None:
+                    good_position = self.find_better_area(
+                        gp1, gp2, state.window_width, state.window_height
+                    )
 
-                self.move(dx, dy)
-            else:
-                self.velocity = [0, 0]
+                    dx = good_position[0] - self_center.x
+                    dy = good_position[1] - self_center.y
 
-        ControllableObject.update(self)
+                    self.move(dx, dy)
+                else:
+                    self.velocity = [0, 0]
+
+        super().update(state)
 
         if self.active and self.can_fire():
             start_position = pygame.Vector2(
                 self.position[0] + self.size[0] / 2,
                 self.position[1] + self.size[1] / 2,
             )
-            target_position = self.get_indicator_position()
-       
+            target_position = self.get_component(AimIndicator).get_indicator_position()
+
             Bullet.Instantiate(start_position, target_position, 2)
             self.fire_cooldown = Enemy.FIRE_RATE
             pass
@@ -560,7 +571,10 @@ class Enemy(ControllableObject):
         return self.fire_cooldown <= 0
 
     def on_death(self) -> None:
-        BombItem.Instantiate(pygame.Vector2(self.position[0], self.position[1]))
+        self_center = pygame.Vector2(
+            self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
+        )
+        BombItem.Instantiate(self_center)
         pass
 
     pass

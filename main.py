@@ -1,5 +1,3 @@
-from operator import index
-
 import pygame
 from pygame.locals import *
 from utility import *
