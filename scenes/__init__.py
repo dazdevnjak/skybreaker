@@ -149,12 +149,12 @@ class GameScene(Scene):
             self.state.player_two,
             self.state.surface,
         )
-
-        if Bomb._instance:
-            Bomb._instance.update()
-            Bomb._instance.render(self.state.screen)
-            if Bomb._instance.position.y > self.state.window_height:
-                Bomb._instance = None
+        Bomb.Update(
+            self.state.screen,
+            self.state.window_height,
+            self.state.player_one,
+            self.state.player_two,
+        )
 
         self.state.screen.blit(self.state.surface, (0, 0))
 

@@ -87,23 +87,31 @@ class Bullet:
             return True
         return False
 
+
 class Bomb:
     _instance = None
-    BOMB_DELETE_TIME = 1500 # 1500ms = 1.5s
+    BOMB_DELETE_TIME = 1500  # 1500ms = 1.5s
     GRAVITY_COEF = 0.05
 
-    def __init__(self,  image_path, start_position, target_position, spawned_by, size=(30, 15), speed = 4):
+    def __init__(
+        self,
+        image_path,
+        start_position,
+        target_position,
+        spawned_by,
+        size=(30, 15),
+        speed=4,
+    ):
         self.image = pygame.transform.scale(pygame.image.load(image_path), size)
         self.start_position = pygame.Vector2(start_position)
         self.target_position = pygame.Vector2(target_position)
-        spawned_by = spawned_by
+        self.spawned_by = spawned_by
         self.position = pygame.Vector2(start_position)
 
         direction = (self.target_position - self.position).normalize()
         self.velocity = direction * speed
         self.angle = math.degrees(math.atan2(direction.y, direction.x))
         pass
-        
 
     def update(self):
         self.velocity.y += Bomb.GRAVITY_COEF
@@ -121,13 +129,33 @@ class Bomb:
         Bomb._instance = None
 
     @staticmethod
-    def Instantiate(start_position,target_position,index):
-        image_path = (
-            "assets/images/bomb.png"
-        )
+    def Instantiate(start_position, target_position, index):
+        image_path = "assets/images/bomb.png"
         bomb = Bomb(image_path, start_position, target_position, index)
         Bomb._instance = bomb
         # Executor.wait(
         #     Bomb.BOMB_DELETE_TIME,
         #     Bomb.Destroy_bomb
         # )
+
+    @staticmethod
+    def Update(screen, window_height, player_one, player_two):
+        if Bomb._instance is None:
+            return
+        Bomb._instance.update()
+        rect = Bomb._instance.render(screen)
+        if Bomb._instance.position.y > window_height:
+            Bomb._instance = None
+        if Bomb.Check_collision(rect, player_one, player_two):
+            Bomb._instance = None
+
+    @staticmethod
+    def Check_collision(bomb_rect, player_one, player_two):
+        target_player = player_one if Bomb._instance.spawned_by == 1 else player_two
+        if target_player.check_intersection(bomb_rect):
+            target_player.take_damage(30)
+            return True
+        if target_player.check_intersection(bomb_rect):
+            target_player.take_damage(30)
+            return True
+        return False

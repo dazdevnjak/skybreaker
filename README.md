@@ -28,8 +28,8 @@
 
 ## Bomba
 - [x] Igrac je dobija kada pokupi pickup, ona trosi vise hp-a od regularnog metka ali na treba na neki poseban nacin da se lansira(npr. ide koso zajedno sa paralaksom ili je teska pa posle kratkog vremena letenja pada)
-- [ ] Treba da se popravi pozivija za item kada se unisti neprijatelja
-- [ ] Bomba ne radi damage playerima!
+- [x] Treba da se popravi pozivija za item kada se unisti neprijatelja
+- [x] Bomba ne radi damage playerima!
 
 ## Stage
 - [ ] Dodati mogucnost igranja igre sa tutorijalima i bez njih

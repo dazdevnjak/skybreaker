@@ -252,7 +252,7 @@ class Enemy(ControllableObject):
                 dy = self.current_target.y - self_center.y
 
                 angle_radii = math.atan2(dy, dx)
-                self.indicator_angle = math.degrees(angle_radii)
+                self.get_component(AimIndicator).indicator_angle = math.degrees(angle_radii)
 
             if target is not None:
                 gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 150)
