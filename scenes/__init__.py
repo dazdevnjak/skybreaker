@@ -3,7 +3,7 @@ from pygame.locals import *
 from utility import *
 
 from entities.player import Player, Enemy
-from entities.bullet import Bullet
+from entities.bullet import Bullet,Bomb
 from entities.rocket import Rocket
 from entities.collectable import Collectable
 
@@ -55,7 +55,7 @@ class MenuScene(Scene):
 
 
 class GameScene(Scene):
-    ENEMY_SPAWN_TIME = 15000  # 15000ms / 15s
+    ENEMY_SPAWN_TIME = 2000 #15000  # 15000ms / 15s
     ROCKETS_START_TIME = 5000  # 5000ms / 5s
 
     def __init__(self, screen, surface, window_width, window_height) -> None:
@@ -119,9 +119,10 @@ class GameScene(Scene):
         self.state.player_two.render(self.state.surface)
         if self.state.enemy is not None:
             self.state.enemy.update(self.state)
-            self.state.enemy.check_edges(
-                self.state.window_width, self.state.window_height
-            )
+            if self.state.enemy.active:
+                self.state.enemy.check_edges(
+                    self.state.window_width, self.state.window_height
+                )
             self.state.enemy.render(self.state.surface)
             if self.state.enemy.health <= 0:
                 self.state.enemy = None  # Removing enemy
@@ -139,6 +140,7 @@ class GameScene(Scene):
             self.state.player_one,
             self.state.player_two,
             self.state.surface,
+            self.state.delta_time
         )
         Collectable.Update_all(
             self.state.delta_time,
@@ -146,6 +148,13 @@ class GameScene(Scene):
             self.state.player_two,
             self.state.surface,
         )
+
+        if(Bomb._instance):
+            Bomb._instance.update()
+            Bomb._instance.render(self.state.screen)
+            if(Bomb._instance.position.y > self.state.window_height):
+                Bomb._instance = None
+
         self.state.screen.blit(self.state.surface, (0, 0))
 
         pass
@@ -155,24 +164,34 @@ class GameScene(Scene):
 
         if not Input.is_joystick_connected(0):
             if Input.is_key_pressed(KEYBOARD_PLAYER_ONE_CONTROLS[6]):
-                if state.player_one.can_fire():
+                if state.player_one.can_fire_bomb():
+                    self.fire_bomb(state.player_one,0)
+                elif state.player_one.can_fire():
                     self.fire_bullet(state.player_one, 0)
         else:
             if Input.is_joystick_button_pressed(
                 0, JOYSTICK_PLAYER_CONTROLS[4][0]
             ) or Input.is_joystick_button_pressed(0, JOYSTICK_PLAYER_CONTROLS[4][1]):
-                if state.player_one.can_fire():
+                if state.player_one.can_fire_bomb():
+                    self.fire_bomb(state.player_one,0)
+                elif state.player_one.can_fire():
                     self.fire_bullet(state.player_one, 0)
+                
 
         if not Input.is_joystick_connected(1):
             if Input.is_key_pressed(KEYBOARD_PLAYER_TWO_CONTROLS[6]):
-                if state.player_two.can_fire():
+                if state.player_two.can_fire_bomb():
+                    self.fire_bomb(state.player_two, 1)
+                elif state.player_two.can_fire():
                     self.fire_bullet(state.player_two, 1)
+                
         else:
             if Input.is_joystick_button_pressed(
                 1, JOYSTICK_PLAYER_CONTROLS[4][0]
             ) or Input.is_joystick_button_pressed(1, JOYSTICK_PLAYER_CONTROLS[4][1]):
-                if state.player_two.can_fire():
+                if state.player_two.can_fire_bomb():
+                    self.fire_bomb(state.player_two,1)
+                elif state.player_two.can_fire():
                     self.fire_bullet(state.player_two, 1)
 
         pass
@@ -187,6 +206,16 @@ class GameScene(Scene):
         player.fire_cooldown = Bullet.BULLET_FIRE_COOLDOWN
 
         pass
+
+    def fire_bomb(self,player,index):
+        start_position = pygame.Vector2(
+            player.position[0] + player.size[0] / 2,
+            player.position[1] + player.size[1] / 2,
+        )
+        target_position = player.get_indicator_position()
+        Bomb.Instantiate(start_position, target_position, index)
+        player.fire_cooldown = Bullet.BULLET_FIRE_COOLDOWN
+        player.throw_bomb()
 
     # Players input
     def handle_movement(self, player, controls, joystick_index):
@@ -218,7 +247,7 @@ class GameScene(Scene):
     def spawn_enemy(self):
         self.state.enemy = Enemy(
             [f"assets/images/enemy/enemy_{i}.png" for i in range(1, 9)],
-            (220, 100),
+            (-50, 100),
         )
         pass
 

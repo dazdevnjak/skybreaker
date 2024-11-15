@@ -60,8 +60,9 @@ JOYSTICK_PLAYER_CONTROLS = [
 
 class Executor:
     class ExecState:
-        def __init__(self, time: float, method) -> None:
+        def __init__(self, time: float, method, condition=None) -> None:
             self.__method = method
+            self.__condition = condition
             self.__time = time
             self.__timer = pygame.time.get_ticks()
             pass
@@ -70,7 +71,7 @@ class Executor:
             self.__timer = pygame.time.get_ticks()
 
         def update(self, current) -> bool:
-            return (current - self.__timer) >= self.__time
+            return (current - self.__timer) >= self.__time and (self.__condition() if self.__condition is not None else True)
 
         def invoke(self) -> None:
             self.__method()
@@ -93,13 +94,13 @@ class Executor:
         pass
 
     @staticmethod
-    def wait(time: float, method):
-        Executor.one_time_method.append(Executor.ExecState(time, method))
+    def wait(time: float, method, condition = None):
+        Executor.one_time_method.append(Executor.ExecState(time, method, condition))
         pass
 
     @staticmethod
-    def repeat(time: float, method):
-        Executor.repeat_method.append(Executor.ExecState(time, method))
+    def repeat(time: float, method, condition = None):
+        Executor.repeat_method.append(Executor.ExecState(time, method, condition))
         pass
 
     @staticmethod

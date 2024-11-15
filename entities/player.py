@@ -1,6 +1,6 @@
 import pygame
 import math
-from utility import ControllableObject
+from utility import ControllableObject,Executor
 from entities.bullet import Bullet
 from entities.collectable import BombItem
 import random
@@ -39,6 +39,14 @@ class Player(ControllableObject):
             ).convert_alpha(),
             self.health_fill_bar_size,
         )
+
+        self.explosion_frames = [
+        pygame.transform.scale(pygame.image.load(f"assets/images/explosion/explosion_{i}.png"), size).convert_alpha()
+        for i in range(1, 7) ]
+        self.current_explosion_frame = random.randrange(0, len(self.explosion_frames))
+        self.animate_explosion = False
+        self.last_animatet_explosion = 0
+
         self.is_invincible = False
         self.is_vulnerable = False
         self.invincible_start_time = 0
@@ -46,6 +54,12 @@ class Player(ControllableObject):
         self.last_blink_time = 0
         self.damage_animation_start_time = None
         self.damage_animation_duration = 500
+
+    def add_bomb(self):
+        self.bomb_count += 1
+
+    def throw_bomb(self):
+        self.bomb_count = max(self.bomb_count -1, 0)
 
     def take_damage(self, damage):
         if not self.is_invincible:
@@ -85,6 +99,15 @@ class Player(ControllableObject):
         if current_time - self.last_update > self.animation_delay:
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = current_time
+        if self.animate_explosion:
+            if current_time - self.last_animatet_explosion > self.animation_delay:
+                self.current_explosion_frame = (self.current_explosion_frame + 1)
+                if(self.current_explosion_frame == len(self.explosion_frames)):
+                    self.animate_explosion = False
+                    self.current_explosion_frame = 0
+                    self.last_animatet_explosion = 0
+                else:
+                    self.last_animatet_explosion = current_time
 
         ControllableObject.update(self)
 
@@ -174,6 +197,9 @@ class Player(ControllableObject):
         ControllableObject.render(self, screen)
         screen.blit(self.frames[self.current_frame], self.position)
 
+        if(self.animate_explosion):
+            screen.blit(self.explosion_frames[self.current_explosion_frame], self.position)
+
     def can_fire(self) -> bool:
         return self.fire_cooldown <= 0
 
@@ -181,6 +207,7 @@ class Player(ControllableObject):
         return self.can_fire() and self.bomb_count > 0
 
     def on_death(self) -> None:
+        self.animate_explosion = True
         self.lives -= 1
         if self.lives > 0:
             self.reset()
@@ -201,10 +228,9 @@ class Player(ControllableObject):
 
 class Enemy(ControllableObject):
     fire_cooldown = 0.0
-    POSITION_SEARCH_INTERVAL: float = 0.2
+    POSITION_SEARCH_INTERVAL: float = 200 # 200ms = 0.2s
     FIRE_RATE = 3
     current_target = None
-    timer: float = 0.0
 
     def __init__(self, image_paths, _position, _size=(128, 72), animation_delay=100):
         ControllableObject.__init__(self, _position, _size)
@@ -242,6 +268,14 @@ class Enemy(ControllableObject):
         self.damage_animation_start_time = None
         self.damage_animation_duration = 500
 
+        self.state = None
+        self.target = None
+        self.further = None
+
+        self.active = False
+        self.velocity[0] = 1
+        Executor.wait(500,self.activate,self.in_screen)
+
     def take_damage(self, damage):
         self.previous_health = self.health
         self.health -= damage
@@ -250,6 +284,13 @@ class Enemy(ControllableObject):
             self.on_death()
         self.damage_animation_start_time = pygame.time.get_ticks()
         self.start_damage_animation = True
+
+    def in_screen(self)->bool:
+        return self.position[0] >= 20
+    
+    def activate(self):
+        self.active = True
+        self.velocity[0] = 0
 
     def animate_enemy_taking_damage(self, state):
         current_time = state.current_time
@@ -358,9 +399,15 @@ class Enemy(ControllableObject):
         self.health_bar_fill.set_alpha(fill_alpha)
         self.health_bar_bg.set_alpha(fill_alpha)
 
+    def lambda_search(self):
+        distances = self.closest_player_position(self.state)
+        self.current_target = self.target = distances[0]
+        self.further = distances[1]
+        pass
+
     def update(self, state):
+        self.state = state
         self.fire_cooldown -= state.delta_time
-        self.timer -= state.delta_time
 
         if self.start_damage_animation:
             self.animate_enemy_taking_damage(state)
@@ -369,23 +416,23 @@ class Enemy(ControllableObject):
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = state.current_time
 
-        target = None
-        further = None
-        if self.timer <= 0:
-            distances = self.closest_player_position(state)
-            self.current_target = target = distances[0]
-            further = distances[1]
-
-            self.timer = Enemy.POSITION_SEARCH_INTERVAL
+        if self.active == True:
+            print('Active called')
+        target = self.target
+        further = self.further
+        Executor.wait(Enemy.POSITION_SEARCH_INTERVAL,self.lambda_search)
 
         self_center = pygame.Vector2(
             self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2
         )
 
-        dx = self.current_target.x - self_center.x
-        dy = self.current_target.y - self_center.y
+        dx = 0
+        dy = 0
 
         if self.current_target is not None:
+            dx = self.current_target.x - self_center.x
+            dy = self.current_target.y - self_center.y
+        
             angle_radii = math.atan2(dy, dx)
             self.indicator_angle = math.degrees(angle_radii)
 
@@ -405,12 +452,13 @@ class Enemy(ControllableObject):
 
         ControllableObject.update(self)
 
-        if self.can_fire():
+        if self.active and self.can_fire():
             start_position = pygame.Vector2(
                 self.position[0] + self.size[0] / 2,
                 self.position[1] + self.size[1] / 2,
             )
             target_position = self.get_indicator_position()
+       
             Bullet.Instantiate(start_position, target_position, 2)
             self.fire_cooldown = Enemy.FIRE_RATE
             pass

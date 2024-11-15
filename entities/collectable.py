@@ -29,19 +29,21 @@ class Collectable:
     @staticmethod
     def Check_collision(collectable, collectable_rect, player_one, player_two):
         if player_one.check_intersection(collectable_rect):
+            player_one.add_bomb()
             print("Player 1 picked up collectable!")
             return True
         if player_two.check_intersection(collectable_rect):
+            player_two.add_bomb()
             print("Player 2 picked up collectable!")
             return True
         return False
 
 
 class BombItem(Collectable):
-    def __init__(self, image_path, position, size=(10, 10)):
+    def __init__(self, image_path, position, size=(30, 15)):
         super().__init__(image_path, position, size)
 
     @staticmethod
     def Instantiate(position):
-        BombItem("assets/images/bullet_one.png", position)
+        BombItem("assets/images/bomb.png", position)
         pass

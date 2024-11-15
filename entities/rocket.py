@@ -3,19 +3,31 @@ import math
 import random
 from utility import Executor
 
-
 class Indicator:
+
+    blink_timer = 0
+    BLINK_COOLDOWN = 0.5
     def __init__(
-        self, position, image_path="assets/images/indicator.png", size=(10, 25)
+        self, position, image_path="assets/images/projectile_indicator.png", size=(12, 25)
     ):
         self.image = pygame.transform.scale(pygame.image.load(image_path), size)
         self.position = pygame.Vector2(position)
 
-    def render(self, screen):
+    def render(self, screen, delta_time):
+        Indicator.blink_timer += delta_time
+
+        period = Indicator.BLINK_COOLDOWN * 2
+        Indicator.blink_timer %= period
+
+        angle = (Indicator.blink_timer / period) * 2 * math.pi
+        alpha = (math.cos(angle) + 1) / 2 * 255
+
+        self.image.set_alpha(int(alpha))
+
         rect = self.image.get_rect(center=self.position)
         screen.blit(self.image, rect)
-        return rect
 
+        return rect
 
 class Rocket:
     instances = []
@@ -27,6 +39,7 @@ class Rocket:
     ROCKET_ROW_COUNT = 2
     ROCKET_COL_COUNT = 3
     ROCKET_COL_SPACING = 80
+    ROCKET_ROW_SPACING = 30
     IMAGE_PATH = "assets/images/projectail.png"
 
     projectile_positions = []
@@ -78,10 +91,13 @@ class Rocket:
         Rocket.indicator_instances.clear()
 
         for _ in range(random.randint(1, Rocket.ROCKET_ROW_COUNT)):
-            height = max_height * random.random()
-            for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
-                position_x = start_x + col * Rocket.ROCKET_COL_SPACING
-                Rocket.projectile_positions.append((position_x, height))
+            height = 30 + ((max_height - 60) * random.random())
+            if not any(abs(pos[1] - height) < Rocket.ROCKET_ROW_SPACING for pos in Rocket.projectile_positions):
+                for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
+                    position_x = start_x + col * Rocket.ROCKET_COL_SPACING
+                    Rocket.projectile_positions.append((position_x, height))
+            else:
+                _ -= 1
 
         for i in range(len(Rocket.projectile_positions)):
             Rocket.InstantiateIndicator(
@@ -105,7 +121,7 @@ class Rocket:
         pass
 
     @staticmethod
-    def Update_all(player_one, player_two, screen):
+    def Update_all(player_one, player_two, screen, delta_time):
         for rocket in Rocket.instances[:]:
             rocket.update()
 
@@ -119,7 +135,7 @@ class Rocket:
                 Rocket.instances.remove(rocket)
 
         for indicator in Rocket.indicator_instances[:]:
-            indicator.render(screen)
+            indicator.render(screen, delta_time)
 
     @staticmethod
     def Check_collision(rocket, rocket_rect, player_one, player_two):

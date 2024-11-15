@@ -86,3 +86,48 @@ class Bullet:
             enemy.take_damage(20)
             return True
         return False
+
+class Bomb:
+    _instance = None
+    BOMB_DELETE_TIME = 1500 # 1500ms = 1.5s
+    GRAVITY_COEF = 0.05
+
+    def __init__(self,  image_path, start_position, target_position, spawned_by, size=(30, 15), speed = 4):
+        self.image = pygame.transform.scale(pygame.image.load(image_path), size)
+        self.start_position = pygame.Vector2(start_position)
+        self.target_position = pygame.Vector2(target_position)
+        spawned_by = spawned_by
+        self.position = pygame.Vector2(start_position)
+
+        direction = (self.target_position - self.position).normalize()
+        self.velocity = direction * speed
+        self.angle = math.degrees(math.atan2(direction.y, direction.x))
+        pass
+        
+
+    def update(self):
+        self.velocity.y += Bomb.GRAVITY_COEF
+        self.angle = math.degrees(math.atan2(self.velocity.y, self.velocity.x))
+        self.position += self.velocity
+
+    def render(self, screen):
+        rotated_image = pygame.transform.rotate(self.image, -self.angle)
+        rotated_rect = rotated_image.get_rect(center=self.position)
+        screen.blit(rotated_image, rotated_rect.topleft)
+        return rotated_rect
+
+    @staticmethod
+    def Destroy_bomb():
+        Bomb._instance = None
+
+    @staticmethod
+    def Instantiate(start_position,target_position,index):
+        image_path = (
+            "assets/images/bomb.png"
+        )
+        bomb = Bomb(image_path, start_position, target_position, index)
+        Bomb._instance = bomb
+        # Executor.wait(
+        #     Bomb.BOMB_DELETE_TIME,
+        #     Bomb.Destroy_bomb
+        # )
