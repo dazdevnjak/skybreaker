@@ -128,8 +128,8 @@ class GameScene(Scene):
             if self.state.enemy.health <= 0:
                 self.state.enemy = None  # Removing enemy
 
-        self.state.player_one.update_ui()
-        self.state.player_two.update_ui()
+        # self.state.player_one.update_ui()
+        # self.state.player_two.update_ui()
 
         Bullet.Update_all(
             self.state.player_one,

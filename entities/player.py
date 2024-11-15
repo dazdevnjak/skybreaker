@@ -25,22 +25,7 @@ class Player(ControllableObject):
         self.last_update = pygame.time.get_ticks()
         self.lives = 3
         self.previous_health = 100
-        self.health_bar_size = (25, 7)
-        self.health_fill_bar_size = (20, 3)
-        self.shake_x_offset = 0
-        self.shake_y_offset = 0
         self.bomb_count = 0
-
-        self.health_bar_bg = pygame.transform.scale(
-            pygame.image.load("assets/images/health_bar/bar_bg.png").convert_alpha(),
-            self.health_bar_size,
-        )
-        self.health_bar_fill = pygame.transform.scale(
-            pygame.image.load(
-                "assets/images/health_bar/bar_fill_small.png"
-            ).convert_alpha(),
-            self.health_fill_bar_size,
-        )
 
         self.explosion_frames = [
             pygame.transform.scale(
@@ -57,8 +42,6 @@ class Player(ControllableObject):
         self.invincible_start_time = 0
         self.blink_interval = 35
         self.last_blink_time = 0
-        self.damage_animation_start_time = None
-        self.damage_animation_duration = 500
 
     def add_bomb(self):
         self.bomb_count += 1
@@ -76,6 +59,7 @@ class Player(ControllableObject):
             else:
                 self.is_invincible = True
                 self.invincible_start_time = pygame.time.get_ticks()
+            self.get_component(HealthBarUI).damage()
             self.damage_animation_start_time = pygame.time.get_ticks()
 
     def update(self, state) -> None:
@@ -115,91 +99,9 @@ class Player(ControllableObject):
                     self.last_animatet_explosion = current_time
 
         super().update(state)
-        # ControllableObject.update(self, state)
-
-    def update_ui(self):
-        current_time = pygame.time.get_ticks()
-        fill_alpha = 200
-
-        if self.damage_animation_start_time:
-            elapsed = current_time - self.damage_animation_start_time
-
-            if elapsed < self.damage_animation_duration:
-                start_width = int(
-                    (self.previous_health / 100) * self.health_fill_bar_size[0]
-                )
-                end_width = int((self.health / 100) * self.health_fill_bar_size[0])
-                progress = elapsed / self.damage_animation_duration
-                self.health_fill_width = int(
-                    start_width + (end_width - start_width) * progress
-                )
-
-                shake_amplitude = 3
-                shake_offset = shake_amplitude * math.sin(elapsed * 0.05)
-                self.shake_x_offset = int(shake_offset)
-                self.shake_y_offset = int(shake_offset)
-
-                color_progress = min(1.0, progress)
-                white_color = (255, 255, 255)
-                red_color = (255, 0, 0)
-                fill_color = (
-                    int(
-                        white_color[0] * (1 - color_progress)
-                        + red_color[0] * color_progress
-                    ),
-                    int(
-                        white_color[1] * (1 - color_progress)
-                        + red_color[1] * color_progress
-                    ),
-                    int(
-                        white_color[2] * (1 - color_progress)
-                        + red_color[2] * color_progress
-                    ),
-                )
-                self.health_bar_fill.fill(fill_color)
-
-            else:
-                self.shake_x_offset = 0
-                self.shake_y_offset = 0
-
-                self.health_fill_width = int(
-                    (self.health / 100) * self.health_fill_bar_size[0]
-                )
-                self.damage_animation_start_time = None
-
-        else:
-            self.health_fill_width = int(
-                (self.health / 100) * self.health_fill_bar_size[0]
-            )
-
-        self.health_bar_fill.set_alpha(fill_alpha)
-        self.health_bar_bg.set_alpha(fill_alpha)
 
     def render(self, state):
         screen = state.surface
-        self.update_ui()
-
-        health_bar_position = (
-            self.position[0] + 80 + self.shake_x_offset,
-            self.position[1] + 10 + self.shake_y_offset,
-        )
-
-        screen.blit(self.health_bar_bg, health_bar_position)
-
-        fill_position = (
-            health_bar_position[0] + 2,
-            health_bar_position[1] + 2,
-        )
-
-        health_fill_rect = pygame.Rect(
-            fill_position, (self.health_fill_width, self.health_bar_size[1])
-        )
-
-        screen.blit(
-            self.health_bar_fill,
-            health_fill_rect,
-            (0, 0, self.health_fill_width, self.health_bar_size[1]),
-        )
 
         super().render(state)
         screen.blit(self.frames[self.current_frame], self.position)
@@ -254,23 +156,8 @@ class Enemy(ControllableObject):
         self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
         self.previous_health = 100
-        self.health_bar_size = (25, 7)
-        self.health_fill_bar_size = (20, 3)
-        self.shake_x_offset = 0
-        self.shake_y_offset = 0
         self.start_damage_animation = False
         self.damage_animation_start_time = 0
-
-        self.health_bar_bg = pygame.transform.scale(
-            pygame.image.load("assets/images/health_bar/bar_bg.png").convert_alpha(),
-            self.health_bar_size,
-        )
-        self.health_bar_fill = pygame.transform.scale(
-            pygame.image.load(
-                "assets/images/health_bar/bar_fill_small.png"
-            ).convert_alpha(),
-            self.health_fill_bar_size,
-        )
 
         self.blink_interval = 35
         self.last_blink_time = 0
@@ -292,6 +179,8 @@ class Enemy(ControllableObject):
         if self.health <= 0:
             self.health = 0
             self.on_death()
+
+        self.get_component(HealthBarUI).damage()
         self.damage_animation_start_time = pygame.time.get_ticks()
         self.start_damage_animation = True
 
@@ -326,90 +215,8 @@ class Enemy(ControllableObject):
 
     def render(self, state):
         screen = state.surface
-        self.update_ui()
-
-        health_bar_position = (
-            self.position[0] + 80 + self.shake_x_offset,
-            self.position[1] + 10 + self.shake_y_offset,
-        )
-
-        screen.blit(self.health_bar_bg, health_bar_position)
-
-        fill_position = (
-            health_bar_position[0] + 2,
-            health_bar_position[1] + 2,
-        )
-
-        health_fill_rect = pygame.Rect(
-            fill_position, (self.health_fill_width, self.health_bar_size[1])
-        )
-
-        screen.blit(
-            self.health_bar_fill,
-            health_fill_rect,
-            (0, 0, self.health_fill_width, self.health_bar_size[1]),
-        )
-
-        # TODO : OVDE
         super().render(state)
         screen.blit(self.frames[self.current_frame], self.position)
-
-    def update_ui(self):
-        current_time = pygame.time.get_ticks()
-        fill_alpha = 200
-
-        if self.damage_animation_start_time:
-            elapsed = current_time - self.damage_animation_start_time
-
-            if elapsed < self.damage_animation_duration:
-                start_width = int(
-                    (self.previous_health / 100) * self.health_fill_bar_size[0]
-                )
-                end_width = int((self.health / 100) * self.health_fill_bar_size[0])
-                progress = elapsed / self.damage_animation_duration
-                self.health_fill_width = int(
-                    start_width + (end_width - start_width) * progress
-                )
-
-                shake_amplitude = 3
-                shake_offset = shake_amplitude * math.sin(elapsed * 0.05)
-                self.shake_x_offset = int(shake_offset)
-                self.shake_y_offset = int(shake_offset)
-
-                color_progress = min(1.0, progress)
-                white_color = (255, 255, 255)
-                red_color = (255, 0, 0)
-                fill_color = (
-                    int(
-                        white_color[0] * (1 - color_progress)
-                        + red_color[0] * color_progress
-                    ),
-                    int(
-                        white_color[1] * (1 - color_progress)
-                        + red_color[1] * color_progress
-                    ),
-                    int(
-                        white_color[2] * (1 - color_progress)
-                        + red_color[2] * color_progress
-                    ),
-                )
-                self.health_bar_fill.fill(fill_color)
-
-            else:
-                self.shake_x_offset = 0
-                self.shake_y_offset = 0
-
-                self.health_fill_width = int(
-                    (self.health / 100) * self.health_fill_bar_size[0]
-                )
-
-        else:
-            self.health_fill_width = int(
-                (self.health / 100) * self.health_fill_bar_size[0]
-            )
-
-        self.health_bar_fill.set_alpha(fill_alpha)
-        self.health_bar_bg.set_alpha(fill_alpha)
 
     def lambda_search(self):
         distances = self.closest_player_position(self.state)

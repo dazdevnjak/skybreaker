@@ -297,6 +297,7 @@ class ControllableObject:
         )
 
         self.add_component(AimIndicator)
+        self.add_component(HealthBarUI)
 
         self.health = 100
         pass
