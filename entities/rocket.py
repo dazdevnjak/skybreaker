@@ -141,12 +141,12 @@ class Rocket:
     def Check_collision(rocket, rocket_rect, player_one, player_two):
         if player_one.check_intersection(rocket_rect):
             print(f"Player one hit by rocket!")
-            player_one.take_damage(10)
+            player_one.take_damage(20)
             return True
 
         if player_two.check_intersection(rocket_rect):
             print(f"Player two hit by rocket!")
-            player_two.take_damage(10)
+            player_two.take_damage(20)
             return True
 
         return False

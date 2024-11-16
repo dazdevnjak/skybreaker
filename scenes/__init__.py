@@ -66,13 +66,24 @@ class GameScene(Scene):
         self.state.window_height = window_height
 
         SoundSystem.load_background_music("assets/music/background.mp3")
-        SoundSystem.load_sound("Projectile passing", "assets/music/projectile.mp3")
-        SoundSystem.load_sound("Fire bullet", "assets/music/bullet.mp3")
-        SoundSystem.load_sound("Fire cannon", "assets/music/cannon.mp3")
-        SoundSystem.load_sound("Explosion", "assets/music/explosion.mp3")
-        SoundSystem.load_sound("On damage", "assets/music/damage.mp3")
-        SoundSystem.load_sound("On damage projectile", "assets/music/projectile_damage.mp3")
-        SoundSystem.load_sound("Pick up", "assets/music/pickup.mp3")
+
+        sounds_data = {
+        "Projectile passing": "assets/music/projectile.mp3",
+        "Fire bullet": "assets/music/bullet.mp3",
+        "Fire cannon": "assets/music/cannon.mp3",
+        "Explosion": "assets/music/explosion.mp3",
+        "On damage": "assets/music/damage.mp3",
+        "On damage projectile": "assets/music/projectile_damage.mp3",
+        "Pick up": "assets/music/pickup.mp3"
+        }
+
+        SoundSystem.load_all_sounds(sounds_data)
+
+        SoundSystem.set_background_volume(0.6)
+        SoundSystem.music_volume = 0.6
+  
+        SoundSystem.set_sound_volume(0.5)
+        SoundSystem.music_volume = 0.6
 
         SoundSystem.play_background_music()
 

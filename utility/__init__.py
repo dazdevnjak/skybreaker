@@ -8,8 +8,8 @@ KEYBOARD_PLAYER_ONE_CONTROLS = [
     pygame.K_a,
     pygame.K_s,
     pygame.K_d,  # MoveVelocity
-    pygame.K_e,
-    pygame.K_r,  # AimVelocity
+    pygame.K_g,
+    pygame.K_h,  # AimVelocity
     pygame.K_SPACE,  # FireButton
 ]
 KEYBOARD_PLAYER_TWO_CONTROLS = [
@@ -17,8 +17,8 @@ KEYBOARD_PLAYER_TWO_CONTROLS = [
     pygame.K_LEFT,
     pygame.K_DOWN,
     pygame.K_RIGHT,  # MoveVelocity
-    pygame.K_k,
-    pygame.K_l,  # AimVelocity
+    pygame.K_KP1,
+    pygame.K_KP2,  # AimVelocity
     pygame.K_BACKSPACE,  # FireButton
 ]
 JOYSTICK_PLAYER_CONTROLS = [
@@ -451,17 +451,21 @@ class Button:
 
 
 class SoundSystem:
-    sounds = None
+    sounds = {}
+    overlapping_sounds = {}
     background_music = None
     music_volume = 0.5
     sound_volume = 0.5
 
     @staticmethod
     def Init():
+        pygame.mixer.init()
         SoundSystem.sounds = {}
+        SoundSystem.overlapping_sounds = {}
         SoundSystem.background_music = None
         SoundSystem.music_volume = 0.5
         SoundSystem.sound_volume = 0.5
+        pygame.mixer.set_num_channels(32)
 
     @staticmethod
     def load_sound(name, file_path):
@@ -470,49 +474,84 @@ class SoundSystem:
             sound.set_volume(SoundSystem.sound_volume)
             SoundSystem.sounds[name] = sound
         except pygame.error as e:
-            print(f"Error loading sound {file_path}: {e}")
+            print(f"Error loading sound '{file_path}': {e}")
 
     @staticmethod
-    def load_all_sound(data: dict[str, str]):
+    def load_all_sounds(data: dict[str, str]):
         for name, path in data.items():
             SoundSystem.load_sound(name, path)
-        pass
 
     @staticmethod
     def play_sound(name, loops=0):
         if name in SoundSystem.sounds:
-            SoundSystem.sounds[name].play(loops=loops)
+            sound = SoundSystem.sounds[name]
+            channel = pygame.mixer.find_channel()
+            if channel is None:
+                print("No available channels to play the sound.")
+                return
+
+            is_playing = False
+            num_channels = pygame.mixer.get_num_channels()
+            for i in range(num_channels):
+                ch = pygame.mixer.Channel(i)
+                if ch.get_sound() == sound and ch.get_busy():
+                    is_playing = True
+                    break
+
+            if is_playing:
+                channel.play(sound, loops=loops)
+                if name not in SoundSystem.overlapping_sounds:
+                    SoundSystem.overlapping_sounds[name] = []
+                SoundSystem.overlapping_sounds[name].append(channel)
+            else:
+                channel.play(sound, loops=loops)
         else:
-            print(f"Sound {name} not found!")
+            print(f"Sound '{name}' not found!")
 
     @staticmethod
     def stop_sound(name):
         if name in SoundSystem.sounds:
-            SoundSystem.sounds[name].stop()
+            sound = SoundSystem.sounds[name]
+            num_channels = pygame.mixer.get_num_channels()
+            for i in range(num_channels):
+                ch = pygame.mixer.Channel(i)
+                if ch.get_sound() == sound:
+                    ch.stop()
+
+        if name in SoundSystem.overlapping_sounds:
+            for channel in SoundSystem.overlapping_sounds[name]:
+                channel.stop()
+            SoundSystem.overlapping_sounds[name].clear()
 
     @staticmethod
     def set_sound_volume(volume):
         SoundSystem.sound_volume = max(0.0, min(1.0, volume))
         for sound in SoundSystem.sounds.values():
             sound.set_volume(SoundSystem.sound_volume)
-        pass
+        for sound_channels in SoundSystem.overlapping_sounds.values():
+            for channel in sound_channels:
+                channel.set_volume(SoundSystem.sound_volume)
+
+    @staticmethod
+    def set_background_volume(volume):
+        SoundSystem.music_volume = max(0.0, min(1.0, volume))
+        pygame.mixer.music.set_volume(SoundSystem.music_volume)
 
     @staticmethod
     def load_background_music(path):
         try:
             pygame.mixer.music.load(path)
-            # SoundSystem.background_music.set_volume(SoundSystem.music_volume)         
+            pygame.mixer.music.set_volume(SoundSystem.music_volume)
             SoundSystem.background_music = path
         except pygame.error as e:
-            print(f"Error loading sound {path}: {e}")
+            print(f"Error loading background music '{path}': {e}")
 
     @staticmethod
     def play_background_music(loops=-1):
         if SoundSystem.background_music:
             pygame.mixer.music.play(loops=loops)
-            # pygame.mixer.music.set_volume(SoundSystem.music_volume)
         else:
-            print("No background music!")
+            print("No background music loaded!")
 
     @staticmethod
     def stop_background_music():
@@ -521,3 +560,9 @@ class SoundSystem:
     @staticmethod
     def resume_background_music():
         pygame.mixer.music.unpause()
+
+    @staticmethod
+    def cleanup_overlapping_sounds():
+        """Optional method to clean up finished overlapping sounds."""
+        for name, channels in SoundSystem.overlapping_sounds.items():
+            SoundSystem.overlapping_sounds[name] = [ch for ch in channels if ch.get_busy()]

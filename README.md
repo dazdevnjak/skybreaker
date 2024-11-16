@@ -10,8 +10,8 @@
 
 ## Sound
 - [x] Dodati sistem za zvuk
-- [ ] Zvukovi se povremeno poklope a ne mogu da se puste u isto vreme
-- [ ] Utisati zvuk za On damage
+- [x] Zvukovi se povremeno poklope a ne mogu da se puste u isto vreme
+- [x] Utisati zvuk za On damage
 - [x] Naci zvukove 
 
 ## Player
