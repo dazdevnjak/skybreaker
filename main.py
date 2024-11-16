@@ -20,7 +20,7 @@ def main():
     pygame.display.set_caption("Break the Floor!")
 
     # Load Initial Scenes
-    Scene.active_scene = GameScene(screen, surface, screen_width, screen_height)
+    Scene.active_scene = GameScene(screen, surface, screen_width, screen_height, True)
     # current_scene = MenuScene()
 
     # Initialize joysticks

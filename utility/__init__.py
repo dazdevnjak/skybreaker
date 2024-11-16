@@ -19,7 +19,7 @@ KEYBOARD_PLAYER_TWO_CONTROLS = [
     pygame.K_RIGHT,  # MoveVelocity
     pygame.K_KP1,
     pygame.K_KP2,  # AimVelocity
-    pygame.K_BACKSPACE,  # FireButton
+    pygame.K_RCTRL,  # FireButton
 ]
 JOYSTICK_PLAYER_CONTROLS = [
     0,

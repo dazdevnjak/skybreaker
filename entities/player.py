@@ -40,7 +40,7 @@ class Player(ControllableObject):
         ]
         self.current_explosion_frame = 0
         self.animate_explosion = False
-        self.last_animatet_explosion = 0
+        self.last_animated_explosion = 0
         self.explosion_animation_delay = 200
 
         self.is_invincible = False
@@ -99,7 +99,7 @@ class Player(ControllableObject):
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = current_time
         if self.animate_explosion:
-            if current_time - self.last_animatet_explosion > self.explosion_animation_delay:
+            if current_time - self.last_animated_explosion > self.explosion_animation_delay:
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
@@ -111,9 +111,9 @@ class Player(ControllableObject):
                         # TODO : Game should end here
                         print("End game!")
                     self.current_explosion_frame = 0
-                    self.last_animatet_explosion = 0
+                    self.last_animated_explosion = 0
                 else:
-                    self.last_animatet_explosion = current_time
+                    self.last_animated_explosion = current_time
 
         super().update(state)
 
@@ -192,7 +192,7 @@ class Enemy(ControllableObject):
         ]
         self.current_explosion_frame = random.randrange(0, len(self.explosion_frames))
         self.animate_explosion = False
-        self.last_animatet_explosion = 0
+        self.last_animated_explosion = 0
         self.explosion_animation_delay = 200
 
     def take_damage(self, damage):
@@ -247,7 +247,7 @@ class Enemy(ControllableObject):
         if self.animate_explosion:
             screen.blit(
                 self.explosion_frames[self.current_explosion_frame], self.position
-            )
+        )
 
     def lambda_search(self):
         distances = self.closest_player_position(self.state)
@@ -267,14 +267,14 @@ class Enemy(ControllableObject):
             self.last_update = state.current_time
 
         if self.animate_explosion:
-            if state.current_time - self.last_animatet_explosion > self.explosion_animation_delay:
+            if state.current_time - self.last_animated_explosion > self.explosion_animation_delay:
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
                     self.current_explosion_frame = 0
-                    self.last_animatet_explosion = 0
+                    self.last_animated_explosion = 0
                 else:
-                    self.last_animatet_explosion = state.current_time
+                    self.last_animated_explosion = state.current_time
 
         if self.active == True:
             target = self.target
