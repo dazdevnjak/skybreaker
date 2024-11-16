@@ -65,6 +65,17 @@ class GameScene(Scene):
         self.state.window_width = window_width
         self.state.window_height = window_height
 
+        SoundSystem.load_background_music("assets/music/background.mp3")
+        SoundSystem.load_sound("Projectile passing", "assets/music/projectile.mp3")
+        SoundSystem.load_sound("Fire bullet", "assets/music/bullet.mp3")
+        SoundSystem.load_sound("Fire cannon", "assets/music/cannon.mp3")
+        SoundSystem.load_sound("Explosion", "assets/music/explosion.mp3")
+        SoundSystem.load_sound("On damage", "assets/music/damage.mp3")
+        SoundSystem.load_sound("On damage projectile", "assets/music/projectile_damage.mp3")
+        SoundSystem.load_sound("Pick up", "assets/music/pickup.mp3")
+
+        SoundSystem.play_background_music()
+
         # Load background images
         self.background_images = [
             pygame.image.load(f"assets/images/background/background_{i}.png")
@@ -213,6 +224,7 @@ class GameScene(Scene):
             ).get_indicator_position()
 
             Bullet.Instantiate(start_position, target_position, index)
+            SoundSystem.play_sound("Fire bullet")
             player.fire_cooldown = Bullet.BULLET_FIRE_COOLDOWN
         pass
 
@@ -226,6 +238,7 @@ class GameScene(Scene):
                 AimIndicator
             ).get_indicator_position()
             Bomb.Instantiate(start_position, target_position, index)
+            SoundSystem.play_sound("Fire cannon")
             player.fire_cooldown = Bullet.BULLET_FIRE_COOLDOWN
             player.throw_bomb()
 

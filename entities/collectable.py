@@ -1,5 +1,6 @@
 import pygame
 
+from utility import SoundSystem
 
 class Collectable:
     instances = []
@@ -31,10 +32,12 @@ class Collectable:
         if player_one.check_intersection(collectable_rect):
             player_one.add_bomb()
             print("Player 1 picked up collectable!")
+            SoundSystem.play_sound("Pick up")
             return True
         if player_two.check_intersection(collectable_rect):
             player_two.add_bomb()
             print("Player 2 picked up collectable!")
+            SoundSystem.play_sound("Pick up")
             return True
         return False
 

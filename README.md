@@ -6,10 +6,13 @@
 ## UI
 - [ ] Dodati interfejs za dzojstik
 - [ ] Prikazivanje tutorial za kretanje 
+- [ ] Zvuk za UI
 
 ## Sound
 - [x] Dodati sistem za zvuk
-- [ ] Naci zvukove 
+- [ ] Zvukovi se povremeno poklope a ne mogu da se puste u isto vreme
+- [ ] Utisati zvuk za On damage
+- [x] Naci zvukove 
 
 ## Player
 - [x] Dodati 3 zivota
@@ -25,6 +28,7 @@
 - [x] Dodati animaciju ili efekat ekspolzije kada enemy umre
 - [x] Napraviti da se neprijatelj stvara van ekrana i ulazi u njega, a ne da se stvori na sredini ekrana
 - [x] Neprijatelj se ucitava na drugom Thread-u kako bi izbegli stutter
+- [ ] Nekad neprijatelj zabaguje i nece da pusti animaciju za eksploziju
 
 ## Bomba
 - [x] Igrac je dobija kada pokupi pickup, ona trosi vise hp-a od regularnog metka ali na treba na neki poseban nacin da se lansira(npr. ide koso zajedno sa paralaksom ili je teska pa posle kratkog vremena letenja pada)

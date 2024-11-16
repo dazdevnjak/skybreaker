@@ -491,7 +491,7 @@ class SoundSystem:
             SoundSystem.sounds[name].stop()
 
     @staticmethod
-    def set_sound_volume(self, volume):
+    def set_sound_volume(volume):
         SoundSystem.sound_volume = max(0.0, min(1.0, volume))
         for sound in SoundSystem.sounds.values():
             sound.set_volume(SoundSystem.sound_volume)
@@ -500,8 +500,9 @@ class SoundSystem:
     @staticmethod
     def load_background_music(path):
         try:
-            SoundSystem.background_music = pygame.mixer.Sound(path)
-            SoundSystem.background_music.set_volume(SoundSystem.music_volume)
+            pygame.mixer.music.load(path)
+            # SoundSystem.background_music.set_volume(SoundSystem.music_volume)         
+            SoundSystem.background_music = path
         except pygame.error as e:
             print(f"Error loading sound {path}: {e}")
 
@@ -509,7 +510,7 @@ class SoundSystem:
     def play_background_music(loops=-1):
         if SoundSystem.background_music:
             pygame.mixer.music.play(loops=loops)
-            pygame.mixer.music.set_volume(SoundSystem.music_volume)
+            # pygame.mixer.music.set_volume(SoundSystem.music_volume)
         else:
             print("No background music!")
 

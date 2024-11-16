@@ -1,8 +1,7 @@
 import pygame
 import math
 import random
-from utility import Executor
-
+from utility import Executor, SoundSystem
 class Indicator:
 
     blink_timer = 0
@@ -84,6 +83,7 @@ class Rocket:
         Rocket.instances.append(
             Rocket(Rocket.IMAGE_PATH, start_position, target_direction)
         )
+        SoundSystem.play_sound("Projectile passing")
 
     @staticmethod
     def LaunchRockets(max_height, start_x):

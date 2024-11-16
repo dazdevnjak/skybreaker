@@ -10,7 +10,7 @@ def main():
 
     # Setup SoundSystem
     SoundSystem.Init()
-
+    
     # Screen setup
     screen_width, screen_height = 576, 324
     screen = pygame.display.set_mode(

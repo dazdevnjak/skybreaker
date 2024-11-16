@@ -79,11 +79,11 @@ class Bullet:
         target_player = player_one if bullet.spawned_by == 1 else player_two
         if target_player.check_intersection(bullet_rect):
             print(f"Player {bullet.spawned_by + 1} hit!")
-            target_player.take_damage(20)
+            target_player.take_damage(10)
             return True
         if enemy is not None and enemy.check_intersection(bullet_rect):
             print(f"Player {bullet.spawned_by + 1} hit enemy!")
-            enemy.take_damage(20)
+            enemy.take_damage(10)
             return True
         return False
 

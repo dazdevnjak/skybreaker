@@ -59,6 +59,10 @@ class Player(ControllableObject):
         if not self.is_invincible:
             self.previous_health = self.health
             self.health -= damage
+            if damage == 10:
+                SoundSystem.play_sound("On damage")
+            else:
+                SoundSystem.play_sound("On damage projectile")
             if self.health <= 0:
                 self.health = 0
                 self.on_death()
@@ -132,6 +136,7 @@ class Player(ControllableObject):
 
     def on_death(self) -> None:
         self.animate_explosion = True
+        SoundSystem.play_sound("Explosion")
         pass
 
     def reset(self) -> None:
@@ -193,6 +198,10 @@ class Enemy(ControllableObject):
     def take_damage(self, damage):
         self.previous_health = self.health
         self.health -= damage
+        if damage == 10:
+            SoundSystem.play_sound("On damage")
+        else:
+            SoundSystem.play_sound("On damage projectile")
         if self.health <= 0:
             self.health = 0
             self.on_death()
@@ -310,6 +319,7 @@ class Enemy(ControllableObject):
             target_position = self.get_component(AimIndicator).get_indicator_position()
 
             Bullet.Instantiate(start_position, target_position, 2)
+            SoundSystem.play_sound("Fire bullet")
             self.fire_cooldown = Enemy.FIRE_RATE
             pass
 
@@ -411,6 +421,7 @@ class Enemy(ControllableObject):
 
     def on_death(self) -> None:
         self.animate_explosion = True
+        SoundSystem.play_sound("Explosion")
         pass
 
     pass
