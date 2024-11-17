@@ -227,6 +227,7 @@ class Input:
             return Input.__joystick_axes[joystick_index][axis]
         return 0.0
 
+
 def get_velocity(controls, joystick_index):
     move_velocity = [0.0, 0.0]
     aim_velocity = 0
@@ -411,6 +412,8 @@ class ControllableObject:
 
 
 class Button:
+    BUTTON_HOVER_SOUND = "Button hover"
+
     def __init__(
         self,
         x,
@@ -430,17 +433,27 @@ class Button:
         self.button_color = button_color
         self.hover_color = hover_color
         self.is_hovered = False
+        self.was_hovered = False
 
         self.font = pygame.font.Font(None, self.font_size)
         self.text_surface = self.font.render(self.text, False, self.font_color)
         self.text_rect = self.text_surface.get_rect(center=self.rect.center)
 
     def draw(self, screen):
+        if self.was_hovered != self.is_hovered:
+            if self.is_hovered:
+                self.on_hover()
+            self.was_hovered = self.is_hovered
+
         if self.is_hovered:
             pygame.draw.rect(screen, self.hover_color, self.rect)
         else:
             pygame.draw.rect(screen, self.button_color, self.rect)
         screen.blit(self.text_surface, self.text_rect)
+
+    def on_hover(self):
+        SoundSystem.play_sound(Button.BUTTON_HOVER_SOUND)
+        pass
 
     def update(self, mouse_pos):
         self.is_hovered = self.rect.collidepoint(mouse_pos)

@@ -76,15 +76,23 @@ class MenuScene(Scene):
     PLAYER_TWO_HOVER_COLOR = (86, 138, 117)
 
     def __init__(
-        self, screen, surface, screen_width, screen_height
+        self, screen, surface, screen_width, screen_height, is_tutorial
     ) -> None:
         super().__init__(screen_width, screen_height)
         self.screen = screen
         self.surface = surface
 
-        # Load background images
-        self.background_image = pygame.image.load(f"assets/images/scenes/main_manu_screen.png")
+        sounds_data = {
+            "Button hover": "assets/music/hover.mp3",
+            "Button click": "assets/music/click.mp3",
+        }
 
+        SoundSystem.load_all_sounds(sounds_data)
+
+        # Load background images
+        self.background_image = pygame.image.load(
+            f"assets/images/scenes/main_manu_screen.png"
+        )
 
         self.name_check = False
         self.selected_index = -1
@@ -104,9 +112,9 @@ class MenuScene(Scene):
             )
         )
 
-        self.player_one_name_selected_index = -1
+        self.player_one_name_selected_index = 0
         self.ready_player_one = False
-        self.player_two_name_selected_index = -1
+        self.player_two_name_selected_index = 1
         self.ready_player_two = False
 
         with open(MenuScene.NAMES_FILE_PATH, "r") as file:
@@ -151,9 +159,11 @@ class MenuScene(Scene):
                 pass  # GO LEFT
             if Input.is_joystick_button_pressed(player_index, 1):
                 if player_index == 0:
+                    SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.ready_player_one = True
                 else:
+                    SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
                     self.ready_player_two = True
                 pass  # ACCEPT
@@ -172,9 +182,11 @@ class MenuScene(Scene):
                 pass  # RIGHT
             if Input.is_key_pressed(INPUT[6]):
                 if player_index == 0:
+                    SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.ready_player_one = True
                 else:
+                    SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
                     self.ready_player_two = True
                 pass  # ACCEPT
@@ -227,8 +239,10 @@ class MenuScene(Scene):
                         self.buttons[i].is_hovered = i == self.selected_index
                 if Input.is_joystick_button_pressed(0, 1):  # ACCEPT
                     if self.selected_index == 0:
+                        SoundSystem.play_sound("Button click")
                         self.name_check = True
                     elif self.selected_index == 1:
+                        SoundSystem.play_sound("Button click")
                         Scene.running = False
                     pass
                 pass
@@ -243,8 +257,10 @@ class MenuScene(Scene):
                         self.buttons[i].is_hovered = i == self.selected_index
                 if Input.is_joystick_button_pressed(1, 1):  # ACCEPT
                     if self.selected_index == 0:
+                        SoundSystem.play_sound("Button click")
                         self.name_check = True
                     elif self.selected_index == 1:
+                        SoundSystem.play_sound("Button click")
                         Scene.running = False
                     pass
                 pass
@@ -265,8 +281,10 @@ class MenuScene(Scene):
                     pygame.K_RETURN
                 ):
                     if self.selected_index == 0:
+                        SoundSystem.play_sound("Button click")
                         self.name_check = True
                     elif self.selected_index == 1:
+                        SoundSystem.play_sound("Button click")
                         Scene.running = False
                     pass
                 pass
@@ -320,7 +338,10 @@ class GameScene(Scene):
         ResultScene.winner, ResultScene.loser = (
             ((self.state.player_one.name, True), (self.state.player_two.name, False))
             if self.state.player_one.lives > self.state.player_two.lives
-            else ((self.state.player_two.name, False), (self.state.player_one.name, True))
+            else (
+                (self.state.player_two.name, False),
+                (self.state.player_one.name, True),
+            )
         )
 
         def end_game():
@@ -364,7 +385,7 @@ class GameScene(Scene):
             "Pick up": "assets/music/pickup.mp3",
         }
 
-        # SoundSystem.load_background_music("assets/music/background.mp3")
+        SoundSystem.load_background_music("assets/music/background.mp3")
         SoundSystem.load_all_sounds(sounds_data)
         # SoundSystem.play_background_music()
 
@@ -376,7 +397,7 @@ class GameScene(Scene):
 
         # Load players
         self.state.player_one = Player(
-            MenuScene.player_two_name_placeholder,
+            MenuScene.player_one_name_placeholder,
             [f"assets/images/player_one/player_{i}.png" for i in range(1, 9)],
             (220, 212),
         )
@@ -898,10 +919,10 @@ class ResultScene(Scene):
 
         # Load background images
         self.background_images = [
-            pygame.image.load(f"assets/images/scenes/blue_player_wins.png"), #Player 1
-            pygame.image.load(f"assets/images/scenes/green_win_screen.png") #Player 2
-            ]
-        
+            pygame.image.load(f"assets/images/scenes/blue_player_wins.png"),  # Player 1
+            pygame.image.load(f"assets/images/scenes/green_win_screen.png"),  # Player 2
+        ]
+
         self.names = {
             "acepilot": "assets/images/names/acepilot.png",
             "airwolf": "assets/images/names/airwolf.png",
@@ -926,8 +947,7 @@ class ResultScene(Scene):
         }
 
         self.names_images = [
-            pygame.image.load(path)
-            for name, path in self.names.items()
+            pygame.image.load(path) for name, path in self.names.items()
         ]
 
         self.index = 0
@@ -952,7 +972,6 @@ class ResultScene(Scene):
 
         self.render_background(self.screen)
 
-
         self.screen.blit(
             self.names_images[self.index],
             (0, 0),
@@ -963,6 +982,8 @@ class ResultScene(Scene):
         pass
 
     def render_background(self, screen):
+        if ResultScene.winner is None:
+            return
         if ResultScene.winner[1]:
             screen.blit(self.background_images[0], (0, 0))
         else:
