@@ -20,7 +20,7 @@ def main():
     pygame.display.set_caption("Break the Floor!")
 
     # Load Initial Scenes
-    Scene.active_scene = GameScene(screen, surface, screen_width, screen_height, True)
+    Scene.active_scene = MenuScene(screen, surface, screen_width, screen_height, True)
     # current_scene = MenuScene()
 
     # Initialize joysticks
@@ -28,15 +28,15 @@ def main():
     pygame.joystick.init()
 
     # Gameloop
-    running = True
+    Scene.running = True
 
-    while running:
+    while Scene.running:
         Input.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                Scene.running = False
 
-        Scene.active_scene.update()
+        Scene.active_scene.update(screen)
         pygame.display.update()
         pass
 

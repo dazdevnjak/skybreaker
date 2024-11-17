@@ -11,6 +11,7 @@ KEYBOARD_PLAYER_ONE_CONTROLS = [
     pygame.K_g,
     pygame.K_h,  # AimVelocity
     pygame.K_SPACE,  # FireButton
+    pygame.K_t,  # SkipButton
 ]
 KEYBOARD_PLAYER_TWO_CONTROLS = [
     pygame.K_UP,
@@ -20,6 +21,7 @@ KEYBOARD_PLAYER_TWO_CONTROLS = [
     pygame.K_KP1,
     pygame.K_KP2,  # AimVelocity
     pygame.K_RCTRL,  # FireButton
+    pygame.K_KP3,  # SkipButton
 ]
 JOYSTICK_PLAYER_CONTROLS = [
     0,
@@ -27,6 +29,7 @@ JOYSTICK_PLAYER_CONTROLS = [
     2,
     3,  # AimVelocity
     [5, 10],  # FireButton
+    4,  # SkipButton
 ]
 
 
@@ -418,8 +421,8 @@ class Button:
         text="",
         font_size=30,
         font_color=(0, 0, 0),
-        button_color=(150, 150, 150),
-        hover_color=(170, 170, 170),
+        button_color=(0, 115, 157),
+        hover_color=(94, 209, 255),
     ):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
@@ -430,7 +433,7 @@ class Button:
         self.is_hovered = False
 
         self.font = pygame.font.Font(None, self.font_size)
-        self.text_surface = self.font.render(self.text, True, self.font_color)
+        self.text_surface = self.font.render(self.text, False, self.font_color)
         self.text_rect = self.text_surface.get_rect(center=self.rect.center)
 
     def draw(self, screen):
@@ -565,4 +568,6 @@ class SoundSystem:
     def cleanup_overlapping_sounds():
         """Optional method to clean up finished overlapping sounds."""
         for name, channels in SoundSystem.overlapping_sounds.items():
-            SoundSystem.overlapping_sounds[name] = [ch for ch in channels if ch.get_busy()]
+            SoundSystem.overlapping_sounds[name] = [
+                ch for ch in channels if ch.get_busy()
+            ]

@@ -5,54 +5,172 @@ from utility import *
 
 from entities.player import Player, Enemy
 from entities.bullet import Bullet, Bomb
-from entities.rocket import Rocket
+from entities.rocket import Rocket, Check_Collision_Bullet_Rocket
 from entities.collectable import Collectable, BombItem
 
 
 class Scene:
     active_scene = None
+    running = False
+    async_scene = None
+    loading = False
+    alpha = 0
+    fade_in = True
+    scene_loaded = False
 
-    def __init__(self) -> None:
+    def __init__(self, width, height) -> None:
+        self.screen_width = width
+        self.screen_height = height
         pass
 
-    def update(self) -> None:
+    def update(self, screen) -> None:
+        if Scene.loading:
+            if Scene.fade_in:
+                Scene.alpha = min(Scene.alpha + 5, 255)
+                if Scene.alpha == 255:
+                    if Scene.scene_loaded:
+                        Scene.fade_in = False
+                        Scene.active_scene = Scene.async_scene
+            else:
+                Scene.alpha = max(Scene.alpha - 5, 0)
+                if Scene.alpha == 0:
+                    Scene.loading = False
+                    Scene.fade_in = True
+
+            color = (0, 0, 0, Scene.alpha)
+            fade_surface = pygame.Surface(
+                (self.screen_width, self.screen_height), pygame.SRCALPHA
+            )
+            fade_surface.fill(color)
+            screen.blit(fade_surface, (0, 0))
+            pass
+        pass
+
+    @staticmethod
+    def load_async(scene, screen, surface, screen_width, screen_height, is_tutorial):
+        Scene.loading = True
+        Scene.alpha = 0
+        Scene.fade_in = True
+        Scene.scene_loaded = False
+
+        def change_scene():
+            Scene.async_scene = scene(
+                screen, surface, screen_width, screen_height, is_tutorial
+            )
+            Scene.scene_loaded = True
+            pass
+
+        thread = threading.Thread(target=change_scene)
+        thread.start()
         pass
 
     pass
 
 
 class MenuScene(Scene):
-    def __init__(self, screen, surface, screen_width, screen_height) -> None:
-        super().__init__()
+    def __init__(
+        self, screen, surface, screen_width, screen_height, is_tutorial
+    ) -> None:
+        super().__init__(screen_width, screen_height)
         self.screen = screen
         self.surface = surface
-        self.screen_width = screen_width
-        self.screen_height = screen_height
 
-        self.start_button = Button(300, 250, 200, 80, text="Start", font_size=36)
+        # Load background images
+        self.background_images = [
+            pygame.image.load(f"assets/images/background/background_{i}.png")
+            for i in range(1, 5)
+        ]
 
-    def update(self):
-        if Input.is_key_pressed(pygame.K_KP_ENTER):
-            Scene.active_scene = GameScene(
-                self.screen, self.surface, self.screen_width, self.screen_height
+        self.selected_index = -1
+
+        self.buttons = []
+        self.buttons.append(
+            Button(screen_width - (120 + 10), 20, 120, 40, text="Start", font_size=36)
+        )
+        self.buttons.append(
+            Button(
+                screen_width - (120 + 10),
+                20 + 40 + 20,
+                120,
+                40,
+                text="Quit",
+                font_size=36,
             )
+        )
 
+    def update(self, screen):
         self.surface.fill((0, 0, 0, 0))
 
-        mouse_pos = pygame.mouse.get_pos()
-        for event in pygame.event.get():
-            if self.start_button.is_clicked(event):
-                Scene.active_scene = GameScene(
-                    self.screen, self.surface, self.screen_width, self.screen_height
-                )
+        if not Scene.loading:  # Don't take input while loading!
+            if Input.is_joystick_connected(0):
+                if Input.is_joystick_button_pressed(0, 13):  # UP
+                    self.selected_index = max(self.selected_index - 1, 0)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_joystick_button_pressed(0, 15):  # DOWN
+                    self.selected_index = min(self.selected_index + 1, 1)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_joystick_button_pressed(0, 0):  # ACCEPT
+                    if self.selected_index == 0:
+                        Scene.load_async(
+                            GameScene,
+                            self.screen,
+                            self.surface,
+                            self.screen_width,
+                            self.screen_height,
+                            True,
+                        )
+                    elif self.selected_index == 1:
+                        Scene.running = False
+                    pass
+                pass
+            else:
+                if Input.is_key_pressed(pygame.K_UP) or Input.is_key_pressed(
+                    pygame.K_w
+                ):  # UP
+                    self.selected_index = max(self.selected_index - 1, 0)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_key_pressed(pygame.K_DOWN) or Input.is_key_pressed(
+                    pygame.K_s
+                ):  # DOWN
+                    self.selected_index = min(self.selected_index + 1, 1)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_key_pressed(pygame.K_SPACE) or Input.is_key_pressed(
+                    pygame.K_RETURN
+                ):
+                    if self.selected_index == 0:
+                        Scene.load_async(
+                            GameScene,
+                            self.screen,
+                            self.surface,
+                            self.screen_width,
+                            self.screen_height,
+                            True,
+                        )
+                    elif self.selected_index == 1:
+                        Scene.running = False
+                    pass
+                pass
 
-        self.start_button.update(mouse_pos)
-        self.start_button.draw(self.screen)
+        self.render_background(self.screen)
+        for button in self.buttons:
+            button.draw(self.screen)
 
         self.screen.blit(self.surface, (0, 0))
+        super().update(screen)
+        pass
+
+    # Render background with parallax
+    def render_background(self, screen):
+        for i, background_image in enumerate(self.background_images):
+            screen.blit(background_image, (0, 0))
         pass
 
     pass
+
 
 class GameScene(Scene):
     ENEMY_SPAWN_TIME = 2000  # 15000  # 15000ms / 15s
@@ -61,23 +179,27 @@ class GameScene(Scene):
     ENEMY_TUTORIAL_SPAWN_TIME = 10000
     ROCKETS_TUTORIAL_START_TIME = 5000
 
-    def __init__(self, screen, surface, window_width, window_height, is_tutorial) -> None:
-        super().__init__()
+    def __init__(
+        self, screen, surface, window_width, window_height, is_tutorial
+    ) -> None:
+        super().__init__(window_width, window_height)
         self.state: GameState = GameState(screen, surface)
         self.state.window_width = window_width
         self.state.window_height = window_height
         self.is_tutorial = is_tutorial
+        self.player_one_skiping = False
+        self.player_two_skiping = False
 
         SoundSystem.load_background_music("assets/music/background.mp3")
 
         sounds_data = {
-        "Projectile passing": "assets/music/projectile.mp3",
-        "Fire bullet": "assets/music/bullet.mp3",
-        "Fire cannon": "assets/music/cannon.mp3",
-        "Explosion": "assets/music/explosion.mp3",
-        "On damage": "assets/music/damage.mp3",
-        "On damage projectile": "assets/music/projectile_damage.mp3",
-        "Pick up": "assets/music/pickup.mp3"
+            "Projectile passing": "assets/music/projectile.mp3",
+            "Fire bullet": "assets/music/bullet.mp3",
+            "Fire cannon": "assets/music/cannon.mp3",
+            "Explosion": "assets/music/explosion.mp3",
+            "On damage": "assets/music/damage.mp3",
+            "On damage projectile": "assets/music/projectile_damage.mp3",
+            "Pick up": "assets/music/pickup.mp3",
         }
 
         SoundSystem.load_all_sounds(sounds_data)
@@ -92,21 +214,32 @@ class GameScene(Scene):
         # Load players
         self.state.player_one = Player(
             [f"assets/images/player_one/player_{i}.png" for i in range(1, 9)],
-            (220, 212)
+            (220, 212),
         )
 
         self.state.player_two = Player(
-            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], 
-            (220, 50)
+            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50)
         )
 
-        analog_stick_side = ["top", "middle", "bottom", "middle", "left", "middle", "right", "middle"]
+        analog_stick_side = [
+            "top",
+            "middle",
+            "bottom",
+            "middle",
+            "left",
+            "middle",
+            "right",
+            "middle",
+        ]
 
         self.tutorail_analog_stick = [
             pygame.transform.scale(
-                pygame.image.load(f"assets/images/tutorial/analog_stick_{side}_white.png"), (170 // 6, 170 // 6)
+                pygame.image.load(
+                    f"assets/images/tutorial/analog_stick_{side}_white.png"
+                ),
+                (170 // 6, 170 // 6),
             ).convert_alpha()
-            for side in analog_stick_side 
+            for side in analog_stick_side
         ]
 
         self.current_analog_stick_frame = 0
@@ -114,32 +247,80 @@ class GameScene(Scene):
         self.analog_stick_animation_delay = 200
 
         image_configs = [
-        ('joystick', 'assets/images/tutorial/joystick_white.png', (760 // 6, 510 // 6)),
-        ('r1_button', 'assets/images/tutorial/r1_button.png', (170 // 6, 170 // 6)),
-        ('w_button', 'assets/images/tutorial/w_button.png', (170 // 6, 170 // 6)),
-        ('a_button', 'assets/images/tutorial/a_button.png', (170 // 6, 170 // 6)),
-        ('s_button', 'assets/images/tutorial/s_button.png', (170 // 6, 170 // 6)),
-        ('d_button', 'assets/images/tutorial/d_button.png', (170 // 6, 170 // 6)),
-        ('left_arrow_button', 'assets/images/tutorial/left_arrow_button.png', (170 // 6, 170 // 6)),
-        ('right_arrow_button', 'assets/images/tutorial/right_arrow_button.png', (170 // 6, 170 // 6)),
-        ('up_arrow_button', 'assets/images/tutorial/up_arrow_button.png', (170 // 6, 170 // 6)),
-        ('down_arrow_button', 'assets/images/tutorial/down_arrow_button.png', (170 // 6, 170 // 6)),
-        ('g_button', 'assets/images/tutorial/g_button.png', (170 // 6, 170 // 6)),
-        ('h_button', 'assets/images/tutorial/h_button.png', (170 // 6, 170 // 6)),
-        ('button_1', 'assets/images/tutorial/1_button.png', (170 // 6, 170 // 6)),
-        ('button_2', 'assets/images/tutorial/2_button.png', (170 // 6, 170 // 6)),
-        ('space_button', 'assets/images/tutorial/space_button.png', (200 // 3, 170 // 4)),
-        ('ctrl_button', 'assets/images/tutorial/ctrl_button.png', (170 // 3, 170 // 4)),
+            (
+                "joystick",
+                "assets/images/tutorial/joystick_white.png",
+                (760 // 6, 510 // 6),
+            ),
+            ("r1_button", "assets/images/tutorial/r1_button.png", (170 // 6, 170 // 6)),
+            ("w_button", "assets/images/tutorial/w_button.png", (170 // 6, 170 // 6)),
+            ("a_button", "assets/images/tutorial/a_button.png", (170 // 6, 170 // 6)),
+            ("s_button", "assets/images/tutorial/s_button.png", (170 // 6, 170 // 6)),
+            ("d_button", "assets/images/tutorial/d_button.png", (170 // 6, 170 // 6)),
+            (
+                "left_arrow_button",
+                "assets/images/tutorial/left_arrow_button.png",
+                (170 // 6, 170 // 6),
+            ),
+            (
+                "right_arrow_button",
+                "assets/images/tutorial/right_arrow_button.png",
+                (170 // 6, 170 // 6),
+            ),
+            (
+                "up_arrow_button",
+                "assets/images/tutorial/up_arrow_button.png",
+                (170 // 6, 170 // 6),
+            ),
+            (
+                "down_arrow_button",
+                "assets/images/tutorial/down_arrow_button.png",
+                (170 // 6, 170 // 6),
+            ),
+            ("g_button", "assets/images/tutorial/g_button.png", (170 // 6, 170 // 6)),
+            ("h_button", "assets/images/tutorial/h_button.png", (170 // 6, 170 // 6)),
+            ("button_1", "assets/images/tutorial/1_button.png", (170 // 6, 170 // 6)),
+            ("button_2", "assets/images/tutorial/2_button.png", (170 // 6, 170 // 6)),
+            (
+                "space_button",
+                "assets/images/tutorial/space_button.png",
+                (200 // 3, 170 // 4),
+            ),
+            (
+                "ctrl_button",
+                "assets/images/tutorial/ctrl_button.png",
+                (170 // 3, 170 // 4),
+            ),
+            ("t_button", "assets/images/tutorial/t_button.png", (170 // 6, 170 // 6)),
+            ("3_button", "assets/images/tutorial/3_button.png", (170 // 6, 170 // 6)),
+            ("x_button", "assets/images/tutorial/x_button.png", (170 // 6, 170 // 6)),
         ]
-        
+
         self.buttons = {}
         for name, filepath, size in image_configs:
             buttons = pygame.image.load(filepath).convert_alpha()
             buttons = pygame.transform.scale(buttons, size)
             self.buttons[name] = buttons
 
-        Executor.wait(GameScene.ENEMY_SPAWN_TIME if not is_tutorial else GameScene.ENEMY_TUTORIAL_SPAWN_TIME, self.spawn_enemy)
-        Executor.wait(GameScene.ROCKETS_START_TIME if not is_tutorial else GameScene.ROCKETS_TUTORIAL_START_TIME, self.spawn_rockets)
+        self.font = pygame.font.Font(None, 26)
+        self.text_surface = self.font.render("To skip tutorial", False, (255, 255, 255))
+
+        Executor.wait(
+            (
+                GameScene.ENEMY_SPAWN_TIME
+                if not is_tutorial
+                else GameScene.ENEMY_TUTORIAL_SPAWN_TIME
+            ),
+            self.spawn_enemy,
+        )
+        Executor.wait(
+            (
+                GameScene.ROCKETS_START_TIME
+                if not is_tutorial
+                else GameScene.ROCKETS_TUTORIAL_START_TIME
+            ),
+            self.spawn_rockets,
+        )
 
         # Parallax settings
         self.parallax_speeds = [0.2, 0.3, 0.4, 0.5]
@@ -149,23 +330,31 @@ class GameScene(Scene):
         pass
 
     def draw_joysticks(self, joystick, r1_button, analog_stick_1, analog_stick_2):
-        if self.state.current_time - self.last_animated_analog_stick > self.analog_stick_animation_delay:
-            self.current_analog_stick_frame = (self.current_analog_stick_frame + 1) % len(self.tutorail_analog_stick)
+        if (
+            self.state.current_time - self.last_animated_analog_stick
+            > self.analog_stick_animation_delay
+        ):
+            self.current_analog_stick_frame = (
+                self.current_analog_stick_frame + 1
+            ) % len(self.tutorail_analog_stick)
             self.last_animated_analog_stick = self.state.current_time
 
         buttons = [
             self.buttons["joystick"],
             self.buttons["r1_button"],
             self.tutorail_analog_stick[self.current_analog_stick_frame],
-            self.tutorail_analog_stick[self.current_analog_stick_frame - 2]
+            self.tutorail_analog_stick[self.current_analog_stick_frame - 2],
         ]
         positions = [joystick, r1_button, analog_stick_1, analog_stick_2]
 
         for button, pos in zip(buttons, positions):
-            blit_position = (self.state.window_width - pos[0], self.state.window_height - pos[1])
+            blit_position = (
+                self.state.window_width - pos[0],
+                self.state.window_height - pos[1],
+            )
             self.state.screen.blit(button, blit_position)
 
-    def draw_keyboard(self, w, a, s, d, g, h, space, index):
+    def draw_keyboard(self, w, a, s, d, g, h, space, skip, index):
         button_sets = {
             0: [
                 (self.buttons["w_button"], w),
@@ -174,7 +363,8 @@ class GameScene(Scene):
                 (self.buttons["d_button"], d),
                 (self.buttons["g_button"], g),
                 (self.buttons["h_button"], h),
-                (self.buttons["space_button"], space)
+                (self.buttons["space_button"], space),
+                (self.buttons["t_button"], skip),
             ],
             1: [
                 (self.buttons["up_arrow_button"], w),
@@ -183,28 +373,114 @@ class GameScene(Scene):
                 (self.buttons["right_arrow_button"], d),
                 (self.buttons["button_1"], g),
                 (self.buttons["button_2"], h),
-                (self.buttons["ctrl_button"], space)
-            ]
+                (self.buttons["ctrl_button"], space),
+                (self.buttons["3_button"], skip),
+            ],
         }
 
         buttons_to_draw = button_sets.get(index, [])
 
-        for button, pos in buttons_to_draw:
-            blit_position = (self.state.window_width - pos[0], self.state.window_height - pos[1])
+        for button, pos in buttons_to_draw[:-1]:
+            blit_position = (
+                self.state.window_width - pos[0],
+                self.state.window_height - pos[1],
+            )
             self.state.screen.blit(button, blit_position)
+
+        last_button, last_pos = buttons_to_draw[-1]
+        blit_position = (
+            self.state.window_width - last_pos[0],
+            self.state.window_height - last_pos[1],
+        )
+        pos = last_pos
+
+        if index == 0 and not self.player_one_skiping:
+            self.state.screen.blit(last_button, blit_position)
+            self.state.screen.blit(
+                self.text_surface,
+                (
+                    (self.state.window_width - 520) + (170 // 6),
+                    (self.state.window_height - pos[1]) + 26 / 6,
+                ),
+            )
+        elif index == 1 and not self.player_two_skiping:
+            self.state.screen.blit(last_button, blit_position)
+            self.state.screen.blit(
+                self.text_surface,
+                (
+                    (self.state.window_width - 100)
+                    - self.text_surface.get_rect().width,
+                    (self.state.window_height - pos[1]) + 26 / 6,
+                ),
+            )
 
     def render_ui(self):
         if self.is_tutorial:
             if Input.is_joystick_connected(0):
                 self.draw_joysticks((550, 90), (460, 110), (485, 55), (518, 55))
             else:
-                self.draw_keyboard((520, 90), (550, 60), (520, 60), (490, 60), (450, 90), (420, 90), (450, 65), 0)
+                self.draw_keyboard(
+                    (520, 90),
+                    (550, 60),
+                    (520, 60),
+                    (490, 60),
+                    (450, 90),
+                    (420, 90),
+                    (450, 65),
+                    (520, self.state.window_height),
+                    0,
+                )
             if Input.is_joystick_connected(1):
                 self.draw_joysticks((150, 90), (60, 110), (85, 55), (118, 55))
             else:
-                self.draw_keyboard((170, 90), (200, 60), (170, 60), (140, 60), (100, 90), (70, 90), (100, 65), 1)
+                self.draw_keyboard(
+                    (170, 90),
+                    (200, 60),
+                    (170, 60),
+                    (140, 60),
+                    (100, 90),
+                    (70, 90),
+                    (100, 65),
+                    (100, self.state.window_height),
+                    1,
+                )
 
-    def update(self) -> None:
+    def handle_tutorial(self):
+        if not self.is_tutorial:
+            return
+
+        if Input.is_joystick_connected(0):
+            self.player_one_skiping = Input.is_joystick_button_hold(
+                0, JOYSTICK_PLAYER_CONTROLS[5]
+            )
+        else:
+            self.player_one_skiping = Input.is_key_hold(KEYBOARD_PLAYER_ONE_CONTROLS[7])
+
+        if Input.is_joystick_connected(1):
+            self.player_two_skiping = Input.is_joystick_button_hold(
+                1, JOYSTICK_PLAYER_CONTROLS[5]
+            )
+        else:
+            self.player_two_skiping = Input.is_key_hold(KEYBOARD_PLAYER_TWO_CONTROLS[7])
+
+        if self.player_one_skiping and self.player_two_skiping:
+            # Scene.load_async(
+            #     GameScene,
+            #     self.state.screen,
+            #     self.state.surface,
+            #     self.state.window_width,
+            #     self.state.window_height,
+            #     False,
+            # )
+            # TODO : Reset all
+            Bullet.instances.clear()
+            Rocket.instances.clear()
+            Bomb._instance = None
+            self.is_tutorial = False
+            pass
+        pass
+
+    def update(self, screen) -> None:
         # Update time
         self.state.current_time = pygame.time.get_ticks()
         self.state.delta_time = (
@@ -216,6 +492,8 @@ class GameScene(Scene):
 
         # Update input
         self.handle_input()
+
+        self.handle_tutorial()
 
         self.handle_movement(self.state.player_one, KEYBOARD_PLAYER_ONE_CONTROLS, 0)
         self.handle_movement(self.state.player_two, KEYBOARD_PLAYER_TWO_CONTROLS, 1)
@@ -242,17 +520,15 @@ class GameScene(Scene):
             self.state.enemy.render(self.state)
             if self.state.enemy.health <= 0 and not self.state.enemy.animate_explosion:
                 self_center = pygame.Vector2(
-                    self.state.enemy.position[0] + self.state.enemy.size[0] / 2, self.state.enemy.position[1] + self.state.enemy.size[1] / 2
+                    self.state.enemy.position[0] + self.state.enemy.size[0] / 2,
+                    self.state.enemy.position[1] + self.state.enemy.size[1] / 2,
                 )
                 BombItem.Instantiate(self_center)
-                self.state.enemy = None  
+                self.state.enemy = None
                 # Removing enemy
-        
-        #Tutorail UI
-        self.render_ui()
 
-        # self.state.player_one.update_ui()
-        # self.state.player_two.update_ui()
+        # Tutorail UI
+        self.render_ui()
 
         Bullet.Update_all(
             self.state.player_one,
@@ -278,9 +554,10 @@ class GameScene(Scene):
             self.state.player_one,
             self.state.player_two,
         )
+        Check_Collision_Bullet_Rocket()
 
         self.state.screen.blit(self.state.surface, (0, 0))
-
+        super().update(screen)
         pass
 
     def handle_input(self):

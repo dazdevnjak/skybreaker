@@ -26,6 +26,7 @@ class Bullet:
         self.velocity = direction * speed
 
         self.angle = math.degrees(math.atan2(direction.y, direction.x))
+        self.rect = None
 
     def update(self):
         self.position += self.velocity
@@ -58,6 +59,8 @@ class Bullet:
             bullet.update()
 
             bullet_rect = bullet.render(screen)
+            bullet.rect = bullet_rect
+            
             if Bullet.Check_collision(
                 bullet, bullet_rect, player_one, player_two, enemy
             ):
@@ -107,6 +110,7 @@ class Bomb:
         self.target_position = pygame.Vector2(target_position)
         self.spawned_by = spawned_by
         self.position = pygame.Vector2(start_position)
+        self.rect = None
 
         direction = (self.target_position - self.position).normalize()
         self.velocity = direction * speed
@@ -140,6 +144,7 @@ class Bomb:
             return
         Bomb._instance.update()
         rect = Bomb._instance.render(screen)
+        Bomb._instance.rect = rect
         if Bomb._instance.position.y > window_height:
             Bomb._instance = None
             return
@@ -148,7 +153,7 @@ class Bomb:
             return
 
     @staticmethod
-    def Check_collision(bomb_rect, player_one, player_two):
+    def Check_collision(bomb_rect, player_one, player_two):        
         target_player = player_one if Bomb._instance.spawned_by == 1 else player_two
         if target_player.check_intersection(bomb_rect):
             target_player.take_damage(30)

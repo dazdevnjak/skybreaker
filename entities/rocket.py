@@ -1,13 +1,20 @@
 import pygame
 import math
 import random
+from entities.bullet import Bullet
 from utility import Executor, SoundSystem
+
+
 class Indicator:
 
     blink_timer = 0
     BLINK_COOLDOWN = 0.5
+
     def __init__(
-        self, position, image_path="assets/images/projectile_indicator.png", size=(12, 25)
+        self,
+        position,
+        image_path="assets/images/projectile_indicator.png",
+        size=(12, 25),
     ):
         self.image = pygame.transform.scale(pygame.image.load(image_path), size)
         self.position = pygame.Vector2(position)
@@ -27,6 +34,7 @@ class Indicator:
         screen.blit(self.image, rect)
 
         return rect
+
 
 class Rocket:
     instances = []
@@ -55,6 +63,7 @@ class Rocket:
         self.position = pygame.Vector2(start_position)
         self.target_direction = pygame.Vector2(target_direction)
         self.velocity = self.target_direction * speed
+        self.rect = None
 
         self.angle = math.degrees(
             math.atan2(self.target_direction.y, self.target_direction.x)
@@ -72,6 +81,11 @@ class Rocket:
 
     def out_of_bounds(self) -> bool:
         return self.position.x < 0
+
+    def check_intersection(self, other: pygame.Rect) -> bool:
+        if other is None:
+            return False
+        return self.rect.colliderect(other)
 
     @staticmethod
     def InstantiateIndicator(start_position):
@@ -92,7 +106,10 @@ class Rocket:
 
         for _ in range(random.randint(1, Rocket.ROCKET_ROW_COUNT)):
             height = 30 + ((max_height - 60) * random.random())
-            if not any(abs(pos[1] - height) < Rocket.ROCKET_ROW_SPACING for pos in Rocket.projectile_positions):
+            if not any(
+                abs(pos[1] - height) < Rocket.ROCKET_ROW_SPACING
+                for pos in Rocket.projectile_positions
+            ):
                 for col in range(random.randint(1, Rocket.ROCKET_COL_COUNT)):
                     position_x = start_x + col * Rocket.ROCKET_COL_SPACING
                     Rocket.projectile_positions.append((position_x, height))
@@ -130,6 +147,7 @@ class Rocket:
                 continue
 
             rocket_rect = rocket.render(screen)
+            rocket.rect = rocket_rect
 
             if Rocket.Check_collision(rocket, rocket_rect, player_one, player_two):
                 Rocket.instances.remove(rocket)
@@ -150,3 +168,11 @@ class Rocket:
             return True
 
         return False
+
+
+def Check_Collision_Bullet_Rocket():
+    for rocket in Rocket.instances:
+        for bullet in Bullet.instances:
+            if rocket.check_intersection(bullet.rect):
+                Bullet.instances.remove(bullet)
+                Rocket.instances.remove(rocket)

@@ -13,7 +13,6 @@ class Player(ControllableObject):
     INVISIBLE_TIME_MS = 1000
     VULNERABLE_TIME_MS = 3000
 
-
     def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
         self.lives = 3
         super().__init__(position, True, size)
@@ -23,12 +22,10 @@ class Player(ControllableObject):
             for path in image_paths
         ]
 
-        
-
         self.animation_delay = animation_delay
         self.current_frame = random.randrange(0, len(self.frames))
         self.last_update = pygame.time.get_ticks()
-       
+
         self.previous_health = 100
         self.bomb_count = 0
 
@@ -99,7 +96,10 @@ class Player(ControllableObject):
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = current_time
         if self.animate_explosion:
-            if current_time - self.last_animated_explosion > self.explosion_animation_delay:
+            if (
+                current_time - self.last_animated_explosion
+                > self.explosion_animation_delay
+            ):
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
@@ -107,9 +107,6 @@ class Player(ControllableObject):
                     self.get_component(HealthBarUI).on_death()
                     if self.lives > 0:
                         self.reset()
-                    else:
-                        # TODO : Game should end here
-                        print("End game!")
                     self.current_explosion_frame = 0
                     self.last_animated_explosion = 0
                 else:
@@ -137,6 +134,9 @@ class Player(ControllableObject):
     def on_death(self) -> None:
         self.animate_explosion = True
         SoundSystem.play_sound("Explosion")
+        if self.lives <= 0:
+            print("End game!")
+            # TODO : Load Leaderboard
         pass
 
     def reset(self) -> None:
@@ -247,7 +247,7 @@ class Enemy(ControllableObject):
         if self.animate_explosion:
             screen.blit(
                 self.explosion_frames[self.current_explosion_frame], self.position
-        )
+            )
 
     def lambda_search(self):
         distances = self.closest_player_position(self.state)
@@ -267,7 +267,10 @@ class Enemy(ControllableObject):
             self.last_update = state.current_time
 
         if self.animate_explosion:
-            if state.current_time - self.last_animated_explosion > self.explosion_animation_delay:
+            if (
+                state.current_time - self.last_animated_explosion
+                > self.explosion_animation_delay
+            ):
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
@@ -293,7 +296,9 @@ class Enemy(ControllableObject):
                 dy = self.current_target.y - self_center.y
 
                 angle_radii = math.atan2(dy, dx)
-                self.get_component(AimIndicator).indicator_angle = math.degrees(angle_radii)
+                self.get_component(AimIndicator).indicator_angle = math.degrees(
+                    angle_radii
+                )
 
             if target is not None:
                 gp1, gp2 = self.find_optimal_position(target, 100, further, 100, 150)

@@ -2,6 +2,7 @@
 
 ## Scene
 - [ ] Meni scena i rezultat scena
+- [x] Fade in Fade out na scenama rade
 
 ## UI
 - [x] Dodati interfejs za dzojstik
@@ -43,4 +44,5 @@
 
 ## Projectiles
 - [x] Popraviti stvaranje projektila, povremeno se desi da se stvori dva projektila na vrlo maloj razlici na z osi sto deluje dosta neprirodno
-- [ ] Dodati koliziju za ispaljene projektile koje dolaze sa strane.
+- [x] Dodati koliziju za ispaljene projektile koje dolaze sa strane.
+- [ ] Meci ponekad ne uniste projektile?
