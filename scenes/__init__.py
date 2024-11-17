@@ -899,7 +899,7 @@ class ResultScene(Scene):
         # Load background images
         self.background_images = [
             pygame.image.load(f"assets/images/scenes/blue_player_wins.png"), #Player 1
-            pygame.image.load(f"assets/images/scenes/green_player_wins.png") #Player 2
+            pygame.image.load(f"assets/images/scenes/green_win_screen.png") #Player 2
             ]
         
         self.names = {
@@ -920,15 +920,20 @@ class ResultScene(Scene):
             "skyviper": "assets/images/names/skyviper.png",
             "stormchaser": "assets/images/names/stormchaser.png",
             "stormrider": "assets/images/names/stormrider.png",
-            "tunderbolt": "assets/images/names/tunderbolt.png",
+            "thunderbolt": "assets/images/names/thunderbolt.png",
             "viper": "assets/images/names/viper.png",
             "wingman": "assets/images/names/wingman.png",
         }
 
         self.names_images = [
             pygame.image.load(path)
-            for name, path in self.names
+            for name, path in self.names.items()
         ]
+
+        self.index = 0
+        for i, name in enumerate(self.names.keys()):
+            if name == ResultScene.winner[0].lower():
+                self.index = i
 
     def update(self, screen) -> None:
 
@@ -947,8 +952,9 @@ class ResultScene(Scene):
 
         self.render_background(self.screen)
 
+
         self.screen.blit(
-            self.names_images[ResultScene.winner[0].lower()],
+            self.names_images[self.index],
             (0, 0),
         )
 

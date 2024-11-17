@@ -16,7 +16,7 @@ class Player(ControllableObject):
     def __init__(
         self, name, image_paths, position, size=(128, 72), animation_delay=100
     ):
-        self.lives = 0
+        self.lives = 1
         self.name = name
         super().__init__(position, True, size)
 
@@ -58,7 +58,7 @@ class Player(ControllableObject):
         self.bomb_count = max(self.bomb_count - 1, 0)
 
     def take_damage(self, damage):
-        if not self.is_invincible and self.health > 0:
+        if not self.is_invincible:
             self.previous_health = self.health
             self.health -= damage
             if damage == 10:
