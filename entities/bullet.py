@@ -55,7 +55,7 @@ class Bullet:
 
     @staticmethod
     def Update_all(player_one, player_two, enemy, screen):
-        for bullet in Bullet.instances[:]:
+        for bullet in Bullet.instances:
             bullet.update()
 
             bullet_rect = bullet.render(screen)

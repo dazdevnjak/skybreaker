@@ -139,7 +139,7 @@ class Rocket:
 
     @staticmethod
     def Update_all(player_one, player_two, screen, delta_time):
-        for rocket in Rocket.instances[:]:
+        for rocket in Rocket.instances:
             rocket.update()
 
             if rocket.out_of_bounds():
@@ -152,7 +152,7 @@ class Rocket:
             if Rocket.Check_collision(rocket, rocket_rect, player_one, player_two):
                 Rocket.instances.remove(rocket)
 
-        for indicator in Rocket.indicator_instances[:]:
+        for indicator in Rocket.indicator_instances:
             indicator.render(screen, delta_time)
 
     @staticmethod
@@ -168,11 +168,3 @@ class Rocket:
             return True
 
         return False
-
-
-def Check_Collision_Bullet_Rocket():
-    for rocket in Rocket.instances:
-        for bullet in Bullet.instances:
-            if rocket.check_intersection(bullet.rect):
-                Bullet.instances.remove(bullet)
-                Rocket.instances.remove(rocket)
