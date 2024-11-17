@@ -274,7 +274,7 @@ class MenuScene(Scene):
         pass
 
     def update(self, screen):
-       
+
         self.surface.fill((0, 0, 0, 0))
 
         self.process_input()
@@ -497,7 +497,9 @@ class GameScene(Scene):
         Executor.init()
         pass
 
-    def draw_joysticks(self, joystick, r1_button, analog_stick_1, analog_stick_2):
+    def draw_joysticks(
+        self, joystick, r1_button, analog_stick_1, analog_stick_2, skip, index
+    ):
         if (
             self.state.current_time - self.last_animated_analog_stick
             > self.analog_stick_animation_delay
@@ -521,6 +523,33 @@ class GameScene(Scene):
                 self.state.window_height - pos[1],
             )
             self.state.screen.blit(button, blit_position)
+
+        last_button, last_pos = self.buttons["x_button"], skip
+        blit_position = (
+            self.state.window_width - last_pos[0],
+            self.state.window_height - last_pos[1],
+        )
+        pos = last_pos
+
+        if index == 0 and not self.player_one_skiping:
+            self.state.screen.blit(last_button, blit_position)
+            self.state.screen.blit(
+                self.text_surface,
+                (
+                    (self.state.window_width - 520) + (170 // 6),
+                    (self.state.window_height - pos[1]) + 26 / 6,
+                ),
+            )
+        elif index == 1 and not self.player_two_skiping:
+            self.state.screen.blit(last_button, blit_position)
+            self.state.screen.blit(
+                self.text_surface,
+                (
+                    (self.state.window_width - 100)
+                    - self.text_surface.get_rect().width,
+                    (self.state.window_height - pos[1]) + 26 / 6,
+                ),
+            )
 
     def draw_keyboard(self, w, a, s, d, g, h, space, skip, index):
         button_sets = {
@@ -585,7 +614,14 @@ class GameScene(Scene):
     def render_ui(self):
         if self.is_tutorial:
             if Input.is_joystick_connected(0):
-                self.draw_joysticks((550, 90), (460, 110), (485, 55), (518, 55))
+                self.draw_joysticks(
+                    (550, 90),
+                    (460, 110),
+                    (485, 55),
+                    (518, 55),
+                    (520, self.state.window_height),
+                    0,
+                )
             else:
                 self.draw_keyboard(
                     (520, 90),
@@ -599,7 +635,14 @@ class GameScene(Scene):
                     0,
                 )
             if Input.is_joystick_connected(1):
-                self.draw_joysticks((150, 90), (60, 110), (85, 55), (118, 55))
+                self.draw_joysticks(
+                    (150, 90),
+                    (60, 110),
+                    (85, 55),
+                    (118, 55),
+                    (100, self.state.window_height),
+                    1,
+                )
             else:
                 self.draw_keyboard(
                     (170, 90),
