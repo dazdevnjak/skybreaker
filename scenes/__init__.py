@@ -76,17 +76,15 @@ class MenuScene(Scene):
     PLAYER_TWO_HOVER_COLOR = (86, 138, 117)
 
     def __init__(
-        self, screen, surface, screen_width, screen_height, is_tutorial
+        self, screen, surface, screen_width, screen_height
     ) -> None:
         super().__init__(screen_width, screen_height)
         self.screen = screen
         self.surface = surface
 
         # Load background images
-        self.background_images = [
-            pygame.image.load(f"assets/images/background/background_{i}.png")
-            for i in range(1, 5)
-        ]
+        self.background_image = pygame.image.load(f"assets/images/scenes/main_manu_screen.png")
+
 
         self.name_check = False
         self.selected_index = -1
@@ -139,19 +137,19 @@ class MenuScene(Scene):
         )
         self.name_buttons[index].is_hovered = False
         if Input.is_joystick_connected(player_index):
-            if Input.is_joystick_button_pressed(player_index, 13):
+            if Input.is_joystick_button_pressed(player_index, 11):
                 index = self.change_name_index(index, player_index, -5)
                 pass  # GO UP
-            elif Input.is_joystick_button_pressed(player_index, 15):
+            elif Input.is_joystick_button_pressed(player_index, 12):
                 index = self.change_name_index(index, player_index, 5)
                 pass  # GO DOWN
-            elif Input.is_joystick_button_pressed(player_index, 12):
+            elif Input.is_joystick_button_pressed(player_index, 14):
                 index = self.change_name_index(index, player_index, 1)
                 pass  # GO RIGHT
-            elif Input.is_joystick_button_pressed(player_index, 14):
+            elif Input.is_joystick_button_pressed(player_index, 13):
                 index = self.change_name_index(index, player_index, -1)
                 pass  # GO LEFT
-            if Input.is_joystick_button_pressed(player_index, 0):
+            if Input.is_joystick_button_pressed(player_index, 1):
                 if player_index == 0:
                     MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.ready_player_one = True
@@ -219,15 +217,31 @@ class MenuScene(Scene):
             pass
         else:
             if Input.is_joystick_connected(0):
-                if Input.is_joystick_button_pressed(0, 7):  # UP
+                if Input.is_joystick_button_pressed(0, 11):  # UP
                     self.selected_index = max(self.selected_index - 1, 0)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_joystick_button_pressed(0, 8):  # DOWN
+                if Input.is_joystick_button_pressed(0, 12):  # DOWN
                     self.selected_index = min(self.selected_index + 1, 1)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_joystick_button_pressed(0, 0):  # ACCEPT
+                if Input.is_joystick_button_pressed(0, 1):  # ACCEPT
+                    if self.selected_index == 0:
+                        self.name_check = True
+                    elif self.selected_index == 1:
+                        Scene.running = False
+                    pass
+                pass
+            if Input.is_joystick_connected(1):
+                if Input.is_joystick_button_pressed(1, 11):  # UP
+                    self.selected_index = max(self.selected_index - 1, 0)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_joystick_button_pressed(1, 12):  # DOWN
+                    self.selected_index = min(self.selected_index + 1, 1)
+                    for i in range(len(self.buttons)):
+                        self.buttons[i].is_hovered = i == self.selected_index
+                if Input.is_joystick_button_pressed(1, 1):  # ACCEPT
                     if self.selected_index == 0:
                         self.name_check = True
                     elif self.selected_index == 1:
@@ -290,9 +304,7 @@ class MenuScene(Scene):
 
     # Render background with parallax
     def render_background(self, screen):
-        for i, background_image in enumerate(self.background_images):
-            screen.blit(background_image, (0, 0))
-        pass
+        screen.blit(self.background_image, (0, 0))
 
     pass
 
@@ -306,9 +318,9 @@ class GameScene(Scene):
 
     def on_player_death(self):
         ResultScene.winner, ResultScene.loser = (
-            (self.state.player_one.name, self.state.player_two.name)
+            ((self.state.player_one.name, True), (self.state.player_two.name, False))
             if self.state.player_one.lives > self.state.player_two.lives
-            else (self.state.player_two.name, self.state.player_one.name)
+            else ((self.state.player_two.name, False), (self.state.player_one.name, True))
         )
 
         def end_game():
@@ -843,16 +855,37 @@ class ResultScene(Scene):
 
         # Load background images
         self.background_images = [
-            pygame.image.load(f"assets/images/background/background_{i}.png")
-            for i in range(1, 3)
-        ]
+            pygame.image.load(f"assets/images/scenes/blue_player_wins.png"), #Player 1
+            pygame.image.load(f"assets/images/scenes/green_player_wins.png") #Player 2
+            ]
+        
+        self.names = {
+            "acepilot": "assets/images/names/acepilot.png",
+            "airwolf": "assets/images/names/airwolf.png",
+            "blaze": "assets/images/names/blaze.png",
+            "blueleader": "assets/images/names/blueleader.png",
+            "eagleeye": "assets/images/names/eagleeye.png",
+            "falcon": "assets/images/names/falcon.png",
+            "ironeagle": "assets/images/names/ironeagle.png",
+            "jetstream": "assets/images/names/jetstream.png",
+            "maverick": "assets/images/names/maverick.png",
+            "nighthawk": "assets/images/names/nighthawk.png",
+            "redbaron": "assets/images/names/redbaron.png",
+            "shadowwing": "assets/images/names/shadowwing.png",
+            "skyhunter": "assets/images/names/skyhunter.png",
+            "skyrider": "assets/images/names/skyrider.png",
+            "skyviper": "assets/images/names/skyviper.png",
+            "stormchaser": "assets/images/names/stormchaser.png",
+            "stormrider": "assets/images/names/stormrider.png",
+            "tunderbolt": "assets/images/names/tunderbolt.png",
+            "viper": "assets/images/names/viper.png",
+            "wingman": "assets/images/names/wingman.png",
+        }
 
-        self.font = pygame.font.Font(None, 26)
-        self.text_surface = self.font.render(
-            ("Player {wname} won!").format(wname=ResultScene.winner),
-            False,
-            (255, 255, 255),
-        )
+        self.names_images = [
+            pygame.image.load(path)
+            for name, path in self.names
+        ]
 
     def update(self, screen) -> None:
 
@@ -872,7 +905,7 @@ class ResultScene(Scene):
         self.render_background(self.screen)
 
         self.screen.blit(
-            self.text_surface,
+            self.names_images[ResultScene.winner[0].lower()],
             (0, 0),
         )
 
@@ -881,8 +914,9 @@ class ResultScene(Scene):
         pass
 
     def render_background(self, screen):
-        for i, background_image in enumerate(self.background_images):
-            screen.blit(background_image, (0, 0))
-        pass
+        if ResultScene.winner[1]:
+            screen.blit(self.background_images[0], (0, 0))
+        else:
+            screen.blit(self.background_images[1], (0, 0))
 
     pass

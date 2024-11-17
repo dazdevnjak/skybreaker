@@ -20,7 +20,7 @@ def main():
     pygame.display.set_caption("Break the Floor!")
 
     # Load Initial Scenes
-    Scene.active_scene = MenuScene(screen, surface, screen_width, screen_height, True)
+    Scene.active_scene = MenuScene(screen, surface, screen_width, screen_height)
 
     # Initialize joysticks
     Input.init()
@@ -34,6 +34,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 Scene.running = False
+            if event.type == pygame.JOYBUTTONDOWN:
+                print(f"Button {event.button} pressed on joystick.")
 
         Scene.active_scene.update(screen)
         pygame.display.update()

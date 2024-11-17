@@ -29,7 +29,7 @@ JOYSTICK_PLAYER_CONTROLS = [
     2,
     3,  # AimVelocity
     [5, 10],  # FireButton
-    4,  # SkipButton
+    1,  # SkipButton
 ]
 
 
@@ -226,7 +226,6 @@ class Input:
         ):
             return Input.__joystick_axes[joystick_index][axis]
         return 0.0
-
 
 def get_velocity(controls, joystick_index):
     move_velocity = [0.0, 0.0]
