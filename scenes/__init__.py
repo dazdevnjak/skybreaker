@@ -174,8 +174,10 @@ class MenuScene(Scene):
                 pass  # RIGHT
             if Input.is_key_pressed(INPUT[6]):
                 if player_index == 0:
+                    MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.ready_player_one = True
                 else:
+                    MenuScene.player_two_name_placeholder = self.player_names[index]
                     self.ready_player_two = True
                 pass  # ACCEPT
             pass
@@ -217,11 +219,11 @@ class MenuScene(Scene):
             pass
         else:
             if Input.is_joystick_connected(0):
-                if Input.is_joystick_button_pressed(0, 13):  # UP
+                if Input.is_joystick_button_pressed(0, 7):  # UP
                     self.selected_index = max(self.selected_index - 1, 0)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_joystick_button_pressed(0, 15):  # DOWN
+                if Input.is_joystick_button_pressed(0, 8):  # DOWN
                     self.selected_index = min(self.selected_index + 1, 1)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
@@ -258,6 +260,7 @@ class MenuScene(Scene):
         pass
 
     def update(self, screen):
+       
         self.surface.fill((0, 0, 0, 0))
 
         self.process_input()
@@ -361,14 +364,14 @@ class GameScene(Scene):
 
         # Load players
         self.state.player_one = Player(
-            "Player 1",
+            MenuScene.player_two_name_placeholder,
             [f"assets/images/player_one/player_{i}.png" for i in range(1, 9)],
             (220, 212),
         )
         self.state.player_one.death_callback = self.on_player_death
 
         self.state.player_two = Player(
-            "Player 2",
+            MenuScene.player_two_name_placeholder,
             [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)],
             (220, 50),
         )

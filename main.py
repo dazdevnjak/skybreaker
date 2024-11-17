@@ -21,7 +21,6 @@ def main():
 
     # Load Initial Scenes
     Scene.active_scene = MenuScene(screen, surface, screen_width, screen_height, True)
-    # current_scene = MenuScene()
 
     # Initialize joysticks
     Input.init()
