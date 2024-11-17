@@ -481,6 +481,8 @@ class SoundSystem:
 
     @staticmethod
     def load_all_sounds(data: dict[str, str]):
+        SoundSystem.sounds.clear()
+        SoundSystem.overlapping_sounds.clear()
         for name, path in data.items():
             SoundSystem.load_sound(name, path)
 

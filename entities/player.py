@@ -366,11 +366,11 @@ class Enemy(ControllableObject):
 
         if d >= d_a + d_b:
             """No solution: Circles cannot intersect at their outer boundaries."""
-            return None
+            return None, None
             # return (player_one.x,player_one.y)
         if d <= abs(d_a - d_b):
             """No solution: One circle would be entirely inside the other."""
-            return None
+            return None, None
             # return (player_one.x,player_one.y)
 
         a = (d_a**2 - d_b**2 + d**2) / (2 * d)

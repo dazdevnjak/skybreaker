@@ -183,6 +183,12 @@ class GameScene(Scene):
         self, screen, surface, window_width, window_height, is_tutorial
     ) -> None:
         super().__init__(window_width, window_height)
+
+        Executor.reset()
+        Bullet.instances.clear()
+        Rocket.instances.clear()
+        Bomb._instance = None
+
         self.state: GameState = GameState(screen, surface)
         self.state.window_width = window_width
         self.state.window_height = window_height
@@ -464,19 +470,14 @@ class GameScene(Scene):
             self.player_two_skiping = Input.is_key_hold(KEYBOARD_PLAYER_TWO_CONTROLS[7])
 
         if self.player_one_skiping and self.player_two_skiping:
-            # Scene.load_async(
-            #     GameScene,
-            #     self.state.screen,
-            #     self.state.surface,
-            #     self.state.window_width,
-            #     self.state.window_height,
-            #     False,
-            # )
-            # TODO : Reset all
-            Bullet.instances.clear()
-            Rocket.instances.clear()
-            Bomb._instance = None
-            self.is_tutorial = False
+            Scene.load_async(
+                GameScene,
+                self.state.screen,
+                self.state.surface,
+                self.state.window_width,
+                self.state.window_height,
+                False,
+            )
             pass
         pass
 
@@ -488,73 +489,80 @@ class GameScene(Scene):
         ) / 1000.0
         self.state.previous_time = self.state.current_time
 
-        Executor.update()
+        if not Scene.loading:
+            Executor.update()
 
-        # Update input
-        self.handle_input()
+            # Update input
+            self.handle_input()
 
-        self.handle_tutorial()
+            self.handle_tutorial()
 
-        self.handle_movement(self.state.player_one, KEYBOARD_PLAYER_ONE_CONTROLS, 0)
-        self.handle_movement(self.state.player_two, KEYBOARD_PLAYER_TWO_CONTROLS, 1)
+            self.handle_movement(self.state.player_one, KEYBOARD_PLAYER_ONE_CONTROLS, 0)
+            self.handle_movement(self.state.player_two, KEYBOARD_PLAYER_TWO_CONTROLS, 1)
 
         self.state.surface.fill((0, 0, 0, 0))
 
-        self.render_background(self.state.screen)
+        if not Scene.loading:
+            self.render_background(self.state.screen)
 
-        self.state.player_one.check_other_player_edges(self.state.player_two)
-        if self.state.enemy is not None:
-            self.state.enemy.check_other_player_edges(self.state.player_one)
-            self.state.enemy.check_other_player_edges(self.state.player_two)
+            self.state.player_one.check_other_player_edges(self.state.player_two)
+            if self.state.enemy is not None:
+                self.state.enemy.check_other_player_edges(self.state.player_one)
+                self.state.enemy.check_other_player_edges(self.state.player_two)
 
-        self.state.player_one.update(self.state)
+            self.state.player_one.update(self.state)
         self.state.player_one.render(self.state)
-        self.state.player_two.update(self.state)
+        if not Scene.loading:
+            self.state.player_two.update(self.state)
         self.state.player_two.render(self.state)
-        if self.state.enemy is not None:
-            self.state.enemy.update(self.state)
-            if self.state.enemy.active:
-                self.state.enemy.check_edges(
-                    self.state.window_width, self.state.window_height
-                )
-            self.state.enemy.render(self.state)
-            if self.state.enemy.health <= 0 and not self.state.enemy.animate_explosion:
-                self_center = pygame.Vector2(
-                    self.state.enemy.position[0] + self.state.enemy.size[0] / 2,
-                    self.state.enemy.position[1] + self.state.enemy.size[1] / 2,
-                )
-                BombItem.Instantiate(self_center)
-                self.state.enemy = None
-                # Removing enemy
+        if not Scene.loading:
+            if self.state.enemy is not None:
+                self.state.enemy.update(self.state)
+                if self.state.enemy.active:
+                    self.state.enemy.check_edges(
+                        self.state.window_width, self.state.window_height
+                    )
+                self.state.enemy.render(self.state)
+                if (
+                    self.state.enemy.health <= 0
+                    and not self.state.enemy.animate_explosion
+                ):
+                    self_center = pygame.Vector2(
+                        self.state.enemy.position[0] + self.state.enemy.size[0] / 2,
+                        self.state.enemy.position[1] + self.state.enemy.size[1] / 2,
+                    )
+                    BombItem.Instantiate(self_center)
+                    self.state.enemy = None
+                    # Removing enemy
 
-        # Tutorail UI
-        self.render_ui()
+            # Tutorail UI
+            self.render_ui()
 
-        Bullet.Update_all(
-            self.state.player_one,
-            self.state.player_two,
-            self.state.enemy,
-            self.state.surface,
-        )
-        Rocket.Update_all(
-            self.state.player_one,
-            self.state.player_two,
-            self.state.surface,
-            self.state.delta_time,
-        )
-        Collectable.Update_all(
-            self.state.delta_time,
-            self.state.player_one,
-            self.state.player_two,
-            self.state.surface,
-        )
-        Bomb.Update(
-            self.state.screen,
-            self.state.window_height,
-            self.state.player_one,
-            self.state.player_two,
-        )
-        Check_Collision_Bullet_Rocket()
+            Bullet.Update_all(
+                self.state.player_one,
+                self.state.player_two,
+                self.state.enemy,
+                self.state.surface,
+            )
+            Rocket.Update_all(
+                self.state.player_one,
+                self.state.player_two,
+                self.state.surface,
+                self.state.delta_time,
+            )
+            Collectable.Update_all(
+                self.state.delta_time,
+                self.state.player_one,
+                self.state.player_two,
+                self.state.surface,
+            )
+            Bomb.Update(
+                self.state.screen,
+                self.state.window_height,
+                self.state.player_one,
+                self.state.player_two,
+            )
+            Check_Collision_Bullet_Rocket()
 
         self.state.screen.blit(self.state.surface, (0, 0))
         super().update(screen)

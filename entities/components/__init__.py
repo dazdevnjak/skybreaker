@@ -108,14 +108,21 @@ class HealthBarUI(Component):
         )
 
         self.lives_bar = [
-           pygame.transform.scale(pygame.image.load(f"assets/images/health_bar/lives_{i}.png").convert_alpha(), self.lives_bar_size)
+            pygame.transform.scale(
+                pygame.image.load(
+                    f"assets/images/health_bar/lives_{i}.png"
+                ).convert_alpha(),
+                self.lives_bar_size,
+            )
             for i in range(1, 4)
         ]
-        
+
         self.lives_left = 2
         self.live_bar = self.lives_bar[-1]
         self.damage_anim = False
         self.anim_start_time = 0
+
+        self.health_fill_width = 0
 
         super().__init__()
 
