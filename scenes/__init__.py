@@ -758,6 +758,7 @@ class GameScene(Scene):
                     )
                     BombItem.Instantiate(self_center)
                     self.state.enemy = None
+                    Executor.wait(GameScene.ENEMY_SPAWN_TIME, self.spawn_enemy)
                     # Removing enemy
 
             # Tutorail UI

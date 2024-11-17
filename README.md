@@ -6,9 +6,9 @@
 
 ## UI
 - [x] Dodati interfejs za dzojstik
-- [ ] Zvuk za UI
+- [x] Zvuk za UI
 - [x] Dodati interfejs za kontrole prilikom biranja imena
-- [ ] Mozda dodati i imena iznad playera
+- [x] Mozda dodati i imena iznad playera
 
 ## Sound
 - [x] Dodati sistem za zvuk
@@ -30,8 +30,8 @@
 - [x] Dodati animaciju ili efekat ekspolzije kada enemy umre
 - [x] Napraviti da se neprijatelj stvara van ekrana i ulazi u njega, a ne da se stvori na sredini ekrana
 - [x] Neprijatelj se ucitava na drugom Thread-u kako bi izbegli stutter
-- [ ] Povremeno skloniti Enemy-ja sa scene pa ga vratiti, kako bi u nekom trenutku ostali igraci nasamo cak i ako nije unisten
-- [ ] Kada je Enemy unisten treba opet da se pojavi nakon nekog vremena
+- [x] Povremeno skloniti Enemy-ja sa scene pa ga vratiti, kako bi u nekom trenutku ostali igraci nasamo cak i ako nije unisten
+- [x] Kada je Enemy unisten treba opet da se pojavi nakon nekog vremena
 
 ## Bomba
 - [x] Igrac je dobija kada pokupi pickup, ona trosi vise hp-a od regularnog metka ali na treba na neki poseban nacin da se lansira(npr. ide koso zajedno sa paralaksom ili je teska pa posle kratkog vremena letenja pada)
