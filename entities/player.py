@@ -13,8 +13,11 @@ class Player(ControllableObject):
     INVISIBLE_TIME_MS = 1000
     VULNERABLE_TIME_MS = 3000
 
-    def __init__(self, image_paths, position, size=(128, 72), animation_delay=100):
-        self.lives = 3
+    def __init__(
+        self, name, image_paths, position, size=(128, 72), animation_delay=100
+    ):
+        self.lives = 1
+        self.name = name
         super().__init__(position, True, size)
 
         self.frames = [
@@ -45,6 +48,8 @@ class Player(ControllableObject):
         self.invincible_start_time = 0
         self.blink_interval = 35
         self.last_blink_time = 0
+
+        self.death_callback = None
 
     def add_bomb(self):
         self.bomb_count += 1
@@ -134,9 +139,9 @@ class Player(ControllableObject):
     def on_death(self) -> None:
         self.animate_explosion = True
         SoundSystem.play_sound("Explosion")
-        if self.lives <= 0:
-            print("End game!")
-            # TODO : Load Leaderboard
+        if self.lives <= 0:  # TODO : Add isDead check to prevent multiple calls
+            if self.death_callback != None:
+                self.death_callback()
         pass
 
     def reset(self) -> None:

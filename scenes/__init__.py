@@ -179,6 +179,27 @@ class GameScene(Scene):
     ENEMY_TUTORIAL_SPAWN_TIME = 10000
     ROCKETS_TUTORIAL_START_TIME = 5000
 
+    def on_player_death(self):
+        ResultScene.winner, ResultScene.loser = (
+            (self.state.player_one.name, self.state.player_two.name)
+            if self.state.player_one.lives > self.state.player_two.lives
+            else (self.state.player_two.name, self.state.player_one.name)
+        )
+
+        def end_game():
+            state = self.state
+            Scene.load_async(
+                ResultScene,
+                state.screen,
+                state.surface,
+                state.window_width,
+                state.window_height,
+                False,
+            )
+
+        Executor.wait(500, end_game)
+        pass
+
     def __init__(
         self, screen, surface, window_width, window_height, is_tutorial
     ) -> None:
@@ -219,13 +240,18 @@ class GameScene(Scene):
 
         # Load players
         self.state.player_one = Player(
+            "Player 1",
             [f"assets/images/player_one/player_{i}.png" for i in range(1, 9)],
             (220, 212),
         )
+        self.state.player_one.death_callback = self.on_player_death
 
         self.state.player_two = Player(
-            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)], (220, 50)
+            "Player 2",
+            [f"assets/images/player_two/player_{i}.png" for i in range(1, 9)],
+            (220, 50),
         )
+        self.state.player_two.death_callback = self.on_player_death
 
         analog_stick_side = [
             "top",
@@ -502,9 +528,8 @@ class GameScene(Scene):
 
         self.state.surface.fill((0, 0, 0, 0))
 
+        self.render_background(self.state.screen)
         if not Scene.loading:
-            self.render_background(self.state.screen)
-
             self.state.player_one.check_other_player_edges(self.state.player_two)
             if self.state.enemy is not None:
                 self.state.enemy.check_other_player_edges(self.state.player_one)
@@ -683,7 +708,57 @@ class GameScene(Scene):
 
 
 class ResultScene(Scene):
-    def __init__(self) -> None:
-        super().__init__()
+    winner, loser = None, None
+
+    def __init__(
+        self, screen, surface, screen_width, screen_height, is_tutorial
+    ) -> None:
+        super().__init__(screen_width, screen_height)
+        self.surface = surface
+        self.screen = screen
+
+        # Load background images
+        self.background_images = [
+            pygame.image.load(f"assets/images/background/background_{i}.png")
+            for i in range(1, 3)
+        ]
+
+        self.font = pygame.font.Font(None, 26)
+        self.text_surface = self.font.render(
+            ("Player {wname} won!").format(wname=ResultScene.winner),
+            False,
+            (255, 255, 255),
+        )
+
+    def update(self, screen) -> None:
+
+        self.surface.fill((0, 0, 0, 0))
+
+        if Input.is_key_pressed(pygame.K_ESCAPE):
+            ResultScene.winner = None
+            Scene.load_async(
+                MenuScene,
+                self.screen,
+                self.surface,
+                self.screen_width,
+                self.screen_height,
+                False,
+            )
+
+        self.render_background(self.screen)
+
+        self.screen.blit(
+            self.text_surface,
+            (0, 0),
+        )
+
+        self.screen.blit(self.surface, (0, 0))
+        super().update(screen)
+        pass
+
+    def render_background(self, screen):
+        for i, background_image in enumerate(self.background_images):
+            screen.blit(background_image, (0, 0))
+        pass
 
     pass
