@@ -7,6 +7,8 @@
 ## UI
 - [x] Dodati interfejs za dzojstik
 - [ ] Zvuk za UI
+- [ ] Dodati interfejs za kontrole prilikom biranja imena
+- [ ] Mozda dodati i imena iznad playera
 
 ## Sound
 - [x] Dodati sistem za zvuk

@@ -68,6 +68,13 @@ class Scene:
 
 
 class MenuScene(Scene):
+    NAMES_FILE_PATH = "assets/player_names.txt"
+    player_one_name_placeholder = None
+    player_two_name_placeholder = None
+
+    PLAYER_ONE_HOVER_COLOR = (56, 76, 112)
+    PLAYER_TWO_HOVER_COLOR = (86, 138, 117)
+
     def __init__(
         self, screen, surface, screen_width, screen_height, is_tutorial
     ) -> None:
@@ -81,6 +88,7 @@ class MenuScene(Scene):
             for i in range(1, 5)
         ]
 
+        self.name_check = False
         self.selected_index = -1
 
         self.buttons = []
@@ -98,10 +106,116 @@ class MenuScene(Scene):
             )
         )
 
-    def update(self, screen):
-        self.surface.fill((0, 0, 0, 0))
+        self.player_one_name_selected_index = -1
+        self.ready_player_one = False
+        self.player_two_name_selected_index = -1
+        self.ready_player_two = False
 
-        if not Scene.loading:  # Don't take input while loading!
+        with open(MenuScene.NAMES_FILE_PATH, "r") as file:
+            self.player_names = [line.strip() for line in file]
+
+        COL_COUNT = 4
+
+        init_x = ((screen_width - (COL_COUNT * 80 + 10 * COL_COUNT)) / 2) - 40
+        init_y = 20 + 10
+        x, y = init_x, init_y
+        index = 0
+
+        self.name_buttons = []
+        for name in self.player_names:
+            self.name_buttons.append(Button(x, y, 80, 20, text=name, font_size=18))
+            x += 80 + 10
+            index += 1
+            if (index - 1) == COL_COUNT:
+                x = init_x
+                y += 20 + 10
+                index = 0
+
+    def handle_player_input(self, player_index, INPUT):
+        index = (
+            self.player_one_name_selected_index
+            if player_index == 0
+            else self.player_two_name_selected_index
+        )
+        self.name_buttons[index].is_hovered = False
+        if Input.is_joystick_connected(player_index):
+            if Input.is_joystick_button_pressed(player_index, 13):
+                index = self.change_name_index(index, player_index, -5)
+                pass  # GO UP
+            elif Input.is_joystick_button_pressed(player_index, 15):
+                index = self.change_name_index(index, player_index, 5)
+                pass  # GO DOWN
+            elif Input.is_joystick_button_pressed(player_index, 12):
+                index = self.change_name_index(index, player_index, 1)
+                pass  # GO RIGHT
+            elif Input.is_joystick_button_pressed(player_index, 14):
+                index = self.change_name_index(index, player_index, -1)
+                pass  # GO LEFT
+            if Input.is_joystick_button_pressed(player_index, 0):
+                if player_index == 0:
+                    MenuScene.player_one_name_placeholder = self.player_names[index]
+                    self.ready_player_one = True
+                else:
+                    MenuScene.player_two_name_placeholder = self.player_names[index]
+                    self.ready_player_two = True
+                pass  # ACCEPT
+        else:
+            if Input.is_key_pressed(INPUT[0]):
+                index = self.change_name_index(index, player_index, -5)
+                pass  # UP
+            elif Input.is_key_pressed(INPUT[1]):
+                index = self.change_name_index(index, player_index, -1)
+                pass  # LEFT
+            elif Input.is_key_pressed(INPUT[2]):
+                index = self.change_name_index(index, player_index, 5)
+                pass  # DOWN
+            elif Input.is_key_pressed(INPUT[3]):
+                index = self.change_name_index(index, player_index, 1)
+                pass  # RIGHT
+            if Input.is_key_pressed(INPUT[6]):
+                if player_index == 0:
+                    self.ready_player_one = True
+                else:
+                    self.ready_player_two = True
+                pass  # ACCEPT
+            pass
+        index = max(0, min(index, len(self.name_buttons) - 1))
+
+        if player_index == 0:
+            self.player_one_name_selected_index = index
+        else:
+            self.player_two_name_selected_index = index
+        self.name_buttons[index].hover_color = (
+            MenuScene.PLAYER_ONE_HOVER_COLOR
+            if player_index == 0
+            else MenuScene.PLAYER_TWO_HOVER_COLOR
+        )
+        self.name_buttons[index].is_hovered = True
+        pass
+
+    def change_name_index(self, index, player_index, offset):
+        changed_index = index + offset
+        if player_index == 0:
+            if self.player_two_name_selected_index == changed_index:
+                changed_index = changed_index + (-1 if offset < 0 else 1)
+        elif player_index == 1:
+            if self.player_one_name_selected_index == changed_index:
+                changed_index = changed_index + (-1 if offset < 0 else 1)
+        if changed_index < 0:
+            changed_index = len(self.name_buttons) - 1
+        elif changed_index > len(self.name_buttons) - 1:
+            changed_index = 0
+        return changed_index
+
+    def process_input(self):
+        if Scene.loading:
+            return
+
+        if self.name_check:
+            self.handle_player_input(0, KEYBOARD_PLAYER_ONE_CONTROLS)
+            self.handle_player_input(1, KEYBOARD_PLAYER_TWO_CONTROLS)
+            pass
+        else:
             if Input.is_joystick_connected(0):
                 if Input.is_joystick_button_pressed(0, 13):  # UP
                     self.selected_index = max(self.selected_index - 1, 0)
@@ -113,14 +227,7 @@ class MenuScene(Scene):
                         self.buttons[i].is_hovered = i == self.selected_index
                 if Input.is_joystick_button_pressed(0, 0):  # ACCEPT
                     if self.selected_index == 0:
-                        Scene.load_async(
-                            GameScene,
-                            self.screen,
-                            self.surface,
-                            self.screen_width,
-                            self.screen_height,
-                            True,
-                        )
+                        self.name_check = True
                     elif self.selected_index == 1:
                         Scene.running = False
                     pass
@@ -142,22 +249,37 @@ class MenuScene(Scene):
                     pygame.K_RETURN
                 ):
                     if self.selected_index == 0:
-                        Scene.load_async(
-                            GameScene,
-                            self.screen,
-                            self.surface,
-                            self.screen_width,
-                            self.screen_height,
-                            True,
-                        )
+                        self.name_check = True
                     elif self.selected_index == 1:
                         Scene.running = False
                     pass
                 pass
+            pass
+        pass
+
+    def update(self, screen):
+        self.surface.fill((0, 0, 0, 0))
+
+        self.process_input()
 
         self.render_background(self.screen)
-        for button in self.buttons:
-            button.draw(self.screen)
+        if not self.name_check:
+            for button in self.buttons:
+                button.draw(self.screen)
+        else:
+            for name_button in self.name_buttons:
+                name_button.draw(self.screen)
+
+            if not Scene.loading:
+                if self.ready_player_one and self.ready_player_two:
+                    Scene.load_async(
+                        GameScene,
+                        self.screen,
+                        self.surface,
+                        self.screen_width,
+                        self.screen_height,
+                        True,
+                    )
 
         self.screen.blit(self.surface, (0, 0))
         super().update(screen)
@@ -217,8 +339,6 @@ class GameScene(Scene):
         self.player_one_skiping = False
         self.player_two_skiping = False
 
-        SoundSystem.load_background_music("assets/music/background.mp3")
-
         sounds_data = {
             "Projectile passing": "assets/music/projectile.mp3",
             "Fire bullet": "assets/music/bullet.mp3",
@@ -229,8 +349,9 @@ class GameScene(Scene):
             "Pick up": "assets/music/pickup.mp3",
         }
 
+        # SoundSystem.load_background_music("assets/music/background.mp3")
         SoundSystem.load_all_sounds(sounds_data)
-        SoundSystem.play_background_music()
+        # SoundSystem.play_background_music()
 
         # Load background images
         self.background_images = [

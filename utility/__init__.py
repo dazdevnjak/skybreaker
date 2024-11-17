@@ -553,10 +553,13 @@ class SoundSystem:
 
     @staticmethod
     def play_background_music(loops=-1):
-        if SoundSystem.background_music:
-            pygame.mixer.music.play(loops=loops)
-        else:
-            print("No background music loaded!")
+        try:
+            if SoundSystem.background_music:
+                pygame.mixer.music.play(loops=loops)
+            else:
+                print("No background music loaded!")
+        except pygame.error as e:
+            print(e)
 
     @staticmethod
     def stop_background_music():

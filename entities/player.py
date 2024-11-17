@@ -58,7 +58,7 @@ class Player(ControllableObject):
         self.bomb_count = max(self.bomb_count - 1, 0)
 
     def take_damage(self, damage):
-        if not self.is_invincible:
+        if not self.is_invincible and self.health > 0:
             self.previous_health = self.health
             self.health -= damage
             if damage == 10:
