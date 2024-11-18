@@ -16,7 +16,7 @@ class Player(ControllableObject):
     def __init__(
         self, name, image_paths, position, size=(128, 72), animation_delay=100
     ):
-        self.lives = 1
+        self.lives = 2
         self.name = name
         super().__init__(position, True, size)
 
@@ -69,7 +69,7 @@ class Player(ControllableObject):
             else:
                 SoundSystem.play_sound("On damage projectile")
             if self.health <= 0:
-                self.health = 0
+                self.health = 100
                 self.on_death()
             else:
                 self.is_invincible = True
@@ -212,7 +212,8 @@ class Enemy(ControllableObject):
         else:
             SoundSystem.play_sound("On damage projectile")
         if self.health <= 0:
-            self.health = 0
+            if self.lives_left > 0:
+                self.health = 100
             self.on_death()
 
         self.get_component(HealthBarUI).damage()

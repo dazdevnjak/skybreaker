@@ -90,8 +90,8 @@ class MenuScene(Scene):
         SoundSystem.load_all_sounds(sounds_data)
 
         # Load background images
-        self.background_image = pygame.image.load(
-            f"assets/images/scenes/main_manu_screen.png"
+        self.background_image = pygame.transform.scale(pygame.image.load(
+            f"assets/images/scenes/select_character_screen.png"), (576, 324)
         )
 
         self.name_check = False
@@ -99,12 +99,12 @@ class MenuScene(Scene):
 
         self.buttons = []
         self.buttons.append(
-            Button(screen_width - (120 + 10), 20, 120, 40, text="Start", font_size=36)
+            Button(screen_width / 2, screen_height - 50, 120, 40, text="Start", font_size=36)
         )
         self.buttons.append(
             Button(
-                screen_width - (120 + 10),
-                20 + 40 + 20,
+                screen_width / 2 + 140,
+                screen_height - 50,
                 120,
                 40,
                 text="Quit",
@@ -122,19 +122,19 @@ class MenuScene(Scene):
 
         COL_COUNT = 4
 
-        init_x = ((screen_width - (COL_COUNT * 80 + 10 * COL_COUNT)) / 2) - 40
+        init_x = ((screen_width - (COL_COUNT * 80 + 10 * COL_COUNT)) / 2) - 90
         init_y = 20 + 10
         x, y = init_x, init_y
         index = 0
 
         self.name_buttons = []
         for name in self.player_names:
-            self.name_buttons.append(Button(x, y, 80, 20, text=name, font_size=18))
-            x += 80 + 10
+            self.name_buttons.append(Button(x, y, 100, 30, text=name, font_size=18))
+            x += 80 + 30
             index += 1
             if (index - 1) == COL_COUNT:
                 x = init_x
-                y += 20 + 10
+                y += 20 + 20
                 index = 0
 
     def handle_player_input(self, player_index, INPUT):
@@ -229,11 +229,11 @@ class MenuScene(Scene):
             pass
         else:
             if Input.is_joystick_connected(0):
-                if Input.is_joystick_button_pressed(0, 11):  # UP
+                if Input.is_joystick_button_pressed(0, 13):  # LEFT
                     self.selected_index = max(self.selected_index - 1, 0)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_joystick_button_pressed(0, 12):  # DOWN
+                if Input.is_joystick_button_pressed(0, 14):  # RIGHT
                     self.selected_index = min(self.selected_index + 1, 1)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
@@ -247,11 +247,11 @@ class MenuScene(Scene):
                     pass
                 pass
             if Input.is_joystick_connected(1):
-                if Input.is_joystick_button_pressed(1, 11):  # UP
+                if Input.is_joystick_button_pressed(1, 13):  # LEFT
                     self.selected_index = max(self.selected_index - 1, 0)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_joystick_button_pressed(1, 12):  # DOWN
+                if Input.is_joystick_button_pressed(1, 14):  # RIGHT
                     self.selected_index = min(self.selected_index + 1, 1)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
@@ -265,13 +265,13 @@ class MenuScene(Scene):
                     pass
                 pass
             else:
-                if Input.is_key_pressed(pygame.K_UP) or Input.is_key_pressed(
+                if Input.is_key_pressed(pygame.K_LEFT) or Input.is_key_pressed(
                     pygame.K_w
                 ):  # UP
                     self.selected_index = max(self.selected_index - 1, 0)
                     for i in range(len(self.buttons)):
                         self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_key_pressed(pygame.K_DOWN) or Input.is_key_pressed(
+                if Input.is_key_pressed(pygame.K_RIGHT) or Input.is_key_pressed(
                     pygame.K_s
                 ):  # DOWN
                     self.selected_index = min(self.selected_index + 1, 1)
@@ -387,7 +387,7 @@ class GameScene(Scene):
 
         SoundSystem.load_background_music("assets/music/background.mp3")
         SoundSystem.load_all_sounds(sounds_data)
-        # SoundSystem.play_background_music()
+        SoundSystem.play_background_music()
 
         # Load background images
         self.background_images = [
@@ -482,7 +482,7 @@ class GameScene(Scene):
             ),
             ("t_button", "assets/images/tutorial/t_button.png", (170 // 6, 170 // 6)),
             ("3_button", "assets/images/tutorial/3_button.png", (170 // 6, 170 // 6)),
-            ("x_button", "assets/images/tutorial/x_button.png", (170 // 6, 170 // 6)),
+            ("x_button", "assets/images/tutorial/x_button.png", (170 // 5, 170 // 6)),
         ]
 
         self.buttons = {}
@@ -640,7 +640,7 @@ class GameScene(Scene):
                     (460, 110),
                     (485, 55),
                     (518, 55),
-                    (520, self.state.window_height),
+                    (530, self.state.window_height),
                     0,
                 )
             else:
@@ -652,7 +652,7 @@ class GameScene(Scene):
                     (450, 90),
                     (420, 90),
                     (450, 65),
-                    (520, self.state.window_height),
+                    (530, self.state.window_height),
                     0,
                 )
             if Input.is_joystick_connected(1):
@@ -661,7 +661,7 @@ class GameScene(Scene):
                     (60, 110),
                     (85, 55),
                     (118, 55),
-                    (100, self.state.window_height),
+                    (90, self.state.window_height),
                     1,
                 )
             else:
@@ -673,7 +673,7 @@ class GameScene(Scene):
                     (100, 90),
                     (70, 90),
                     (100, 65),
-                    (100, self.state.window_height),
+                    (90, self.state.window_height),
                     1,
                 )
 
@@ -920,8 +920,8 @@ class ResultScene(Scene):
 
         # Load background images
         self.background_images = [
-            pygame.image.load(f"assets/images/scenes/blue_player_wins.png"),  # Player 1
-            pygame.image.load(f"assets/images/scenes/green_win_screen.png"),  # Player 2
+            pygame.transform.scale(pygame.image.load(f"assets/images/scenes/blue_player_win_screen.png"), (576, 324)),  # Player 1
+            pygame.transform.scale(pygame.image.load(f"assets/images/scenes/green_player_win_screen.png"), (576, 324)),  # Player 2
         ]
 
         self.names = {

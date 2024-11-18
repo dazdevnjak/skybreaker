@@ -423,7 +423,7 @@ class Button:
         text="",
         font_size=30,
         font_color=(0, 0, 0),
-        button_color=(0, 115, 157),
+        button_color=(209, 179, 128),
         hover_color=(94, 209, 255),
     ):
         self.rect = pygame.Rect(x, y, width, height)
@@ -435,7 +435,7 @@ class Button:
         self.is_hovered = False
         self.was_hovered = False
 
-        self.font = pygame.font.Font(None, self.font_size)
+        self.font = pygame.font.SysFont('calibri', self.font_size)
         self.text_surface = self.font.render(self.text, False, self.font_color)
         self.text_rect = self.text_surface.get_rect(center=self.rect.center)
 
