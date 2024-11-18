@@ -60,7 +60,7 @@ class Bullet:
 
             bullet_rect = bullet.render(screen)
             bullet.rect = bullet_rect
-            
+
             if Bullet.Check_collision(
                 bullet, bullet_rect, player_one, player_two, enemy
             ):
@@ -70,22 +70,18 @@ class Bullet:
     def Check_collision(bullet, bullet_rect, player_one, player_two, enemy):
         if bullet.spawned_by == 2:
             if player_one.check_intersection(bullet_rect):
-                print(f"Player {bullet.spawned_by + 1} hit!")
                 player_one.take_damage(10)
                 return True
             if player_two.check_intersection(bullet_rect):
-                print(f"Player {bullet.spawned_by + 1} hit!")
                 player_two.take_damage(10)
                 return True
             return False
 
         target_player = player_one if bullet.spawned_by == 1 else player_two
         if target_player.check_intersection(bullet_rect):
-            print(f"Player {bullet.spawned_by + 1} hit!")
             target_player.take_damage(10)
             return True
         if enemy is not None and enemy.check_intersection(bullet_rect):
-            print(f"Player {bullet.spawned_by + 1} hit enemy!")
             enemy.take_damage(10)
             return True
         return False
@@ -153,7 +149,7 @@ class Bomb:
             return
 
     @staticmethod
-    def Check_collision(bomb_rect, player_one, player_two):        
+    def Check_collision(bomb_rect, player_one, player_two):
         target_player = player_one if Bomb._instance.spawned_by == 1 else player_two
         if target_player.check_intersection(bomb_rect):
             target_player.take_damage(30)

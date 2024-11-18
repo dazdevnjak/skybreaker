@@ -16,7 +16,7 @@ class Player(ControllableObject):
     def __init__(
         self, name, image_paths, position, size=(128, 72), animation_delay=100
     ):
-        self.lives = 2
+        self.lives = 1
         self.name = name
         super().__init__(position, True, size)
 
@@ -49,9 +49,10 @@ class Player(ControllableObject):
         self.blink_interval = 35
         self.last_blink_time = 0
 
+        self.is_over = False
         self.death_callback = None
 
-        self.font = pygame.font.SysFont('calibri', 11)
+        self.font = pygame.font.SysFont("calibri", 11)
         self.name_ui = self.font.render(self.name, False, (255, 255, 255))
 
     def add_bomb(self):
@@ -144,7 +145,8 @@ class Player(ControllableObject):
     def on_death(self) -> None:
         self.animate_explosion = True
         SoundSystem.play_sound("Explosion")
-        if self.lives <= 0:  # TODO : Add isDead check to prevent multiple calls
+        if self.lives <= 0 and not self.is_over:
+            self.is_over = True
             if self.death_callback != None:
                 self.death_callback()
         pass

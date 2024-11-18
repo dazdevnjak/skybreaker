@@ -84,6 +84,9 @@ class MenuScene(Scene):
         self.screen = screen
         self.surface = surface
 
+        MenuScene.player_one_name_placeholder = None
+        MenuScene.player_two_name_placeholder = None
+
         sounds_data = {
             "Button hover": "assets/music/hover.mp3",
             "Button click": "assets/music/click.mp3",
@@ -95,12 +98,17 @@ class MenuScene(Scene):
         SoundSystem.play_background_music()
 
         # Load background images
-        self.background_image = [ pygame.transform.scale(
-            pygame.image.load(f"assets/images/scenes/main_menu_screen.png"),
-            (576, 324)),
+        self.background_image = [
             pygame.transform.scale(
-            pygame.image.load(f"assets/images/scenes/select_player_name_screen.png"),
-            (576, 324))
+                pygame.image.load(f"assets/images/scenes/main_menu_screen.png"),
+                (576, 324),
+            ),
+            pygame.transform.scale(
+                pygame.image.load(
+                    f"assets/images/scenes/select_player_name_screen.png"
+                ),
+                (576, 324),
+            ),
         ]
 
         self.name_check = False
@@ -178,6 +186,40 @@ class MenuScene(Scene):
         self.player_one_name_ui = None
         self.player_two_name_ui = None
 
+        self.player_one_ready_text = self.font.render(
+            "For ready", False, (0,0,0)
+        )
+        self.player_two_ready_text = self.font.render(
+            "For ready", False, (0,0,0)
+        )
+
+        self.title_font = pygame.font.Font(None, 24)
+        self.title_text = self.title_font.render("Choose Names", False, (255, 255, 255))
+        self.title_position = (
+            (self.screen_width - self.title_text.get_rect().width) / 2,
+            0,
+        )
+
+        image_configs = [
+            (
+                "space_button",
+                "assets/images/tutorial/space_button.png",
+                (200 // 3, 170 // 4),
+            ),
+            (
+                "ctrl_button",
+                "assets/images/tutorial/ctrl_button.png",
+                (170 // 3, 170 // 4),
+            ),
+            ("r1_button", "assets/images/tutorial/r1_button.png", (170 // 6, 170 // 6)),
+        ]
+
+        self.input_buttons = {}
+        for name, filepath, size in image_configs:
+            button = pygame.image.load(filepath).convert_alpha()
+            button = pygame.transform.scale(button, size)
+            self.input_buttons[name] = button
+
     def handle_player_input(self, player_index, INPUT):
         index = (
             self.player_one_name_selected_index
@@ -199,19 +241,23 @@ class MenuScene(Scene):
                 index = self.change_name_index(index, player_index, -1)
                 pass  # GO LEFT
             if Input.is_joystick_button_pressed(player_index, 1):
-                self.font = pygame.font.SysFont('calibri', 12)
+                self.font = pygame.font.SysFont("calibri", 12)
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.player_one_name_ui = self.font.render(
-                        self.player_names[index], False, (255, 255, 255)
+                        self.player_names[index],
+                        False,
+                        MenuScene.PLAYER_ONE_HOVER_COLOR,
                     )
                     self.ready_player_one = True
                 else:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
                     self.player_two_name_ui = self.font.render(
-                        self.player_names[index], False, (255, 255, 255)
+                        self.player_names[index],
+                        False,
+                        MenuScene.PLAYER_TWO_HOVER_COLOR,
                     )
                     self.ready_player_two = True
                 pass  # ACCEPT
@@ -229,20 +275,24 @@ class MenuScene(Scene):
                 index = self.change_name_index(index, player_index, 1)
                 pass  # RIGHT
             if Input.is_key_pressed(INPUT[6]):
-                self.font = pygame.font.SysFont('calibri', 12)
+                self.font = pygame.font.SysFont("calibri", 12)
 
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
                     self.player_one_name_ui = self.font.render(
-                        self.player_names[index], False, (255, 255, 255)
+                        self.player_names[index],
+                        False,
+                        MenuScene.PLAYER_ONE_HOVER_COLOR,
                     )
                     self.ready_player_one = True
                 else:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
                     self.player_two_name_ui = self.font.render(
-                        self.player_names[index], False, (255, 255, 255)
+                        self.player_names[index],
+                        False,
+                        MenuScene.PLAYER_TWO_HOVER_COLOR,
                     )
                     self.ready_player_two = True
                 pass  # ACCEPT
@@ -322,29 +372,27 @@ class MenuScene(Scene):
                         Scene.running = False
                     pass
                 pass
-            else:
-                if Input.is_key_pressed(pygame.K_LEFT) or Input.is_key_pressed(
-                    pygame.K_w
-                ):  # UP
-                    self.selected_index = max(self.selected_index - 1, 0)
-                    for i in range(len(self.buttons)):
-                        self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_key_pressed(pygame.K_RIGHT) or Input.is_key_pressed(
-                    pygame.K_s
-                ):  # DOWN
-                    self.selected_index = min(self.selected_index + 1, 1)
-                    for i in range(len(self.buttons)):
-                        self.buttons[i].is_hovered = i == self.selected_index
-                if Input.is_key_pressed(pygame.K_SPACE) or Input.is_key_pressed(
-                    pygame.K_RETURN
-                ):
-                    if self.selected_index == 0:
-                        SoundSystem.play_sound("Button click")
-                        self.name_check = True
-                    elif self.selected_index == 1:
-                        SoundSystem.play_sound("Button click")
-                        Scene.running = False
-                    pass
+            if Input.is_key_pressed(pygame.K_LEFT) or Input.is_key_pressed(
+                pygame.K_w
+            ):  # UP
+                self.selected_index = max(self.selected_index - 1, 0)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_key_pressed(pygame.K_RIGHT) or Input.is_key_pressed(
+                pygame.K_s
+            ):  # DOWN
+                self.selected_index = min(self.selected_index + 1, 1)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_key_pressed(pygame.K_SPACE) or Input.is_key_pressed(
+                pygame.K_RETURN
+            ):
+                if self.selected_index == 0:
+                    SoundSystem.play_sound("Button click")
+                    self.name_check = True
+                elif self.selected_index == 1:
+                    SoundSystem.play_sound("Button click")
+                    Scene.running = False
                 pass
             pass
         pass
@@ -360,6 +408,7 @@ class MenuScene(Scene):
             for button in self.buttons:
                 button.draw(self.screen)
         else:
+            screen.blit(self.title_text, self.title_position)
             for name_button in self.name_buttons:
                 name_button.draw(self.screen)
 
@@ -384,20 +433,47 @@ class MenuScene(Scene):
             )
             self.last_update = current_time
 
-        if self.ready_player_one:
-            position = (self.screen_width / 2 - 50 - 128, 220)
-            screen.blit(self.player_one_name_ui, position)
-            screen.blit(
-                self.player_one_frames[self.player_one_current_frame],
-                position,
-            )
-        if self.ready_player_two:
-            position = (self.screen_width / 2 - 50 + 128 + 20, 220)
-            screen.blit(self.player_two_name_ui, position)
-            screen.blit(
-                self.player_two_frames[self.player_two_current_frame],
-                position,
-            )
+        if self.name_check:
+            if self.ready_player_one:
+                position = (self.screen_width / 2 - 50 - 128, 220)
+                screen.blit(self.player_one_name_ui, position)
+                screen.blit(
+                    self.player_one_frames[self.player_one_current_frame],
+                    position,
+                )
+            else:
+                position = (self.screen_width / 2 - 50 - 128, 220)
+                screen.blit(self.player_one_ready_text, position)
+                screen.blit(
+                    self.input_buttons[
+                        (
+                            "space_button"
+                            if not Input.is_joystick_connected(0)
+                            else "r1_button"
+                        )
+                    ],
+                    position,
+                )
+            if self.ready_player_two:
+                position = (self.screen_width / 2 - 50 + 128 + 20, 220)
+                screen.blit(self.player_two_name_ui, position)
+                screen.blit(
+                    self.player_two_frames[self.player_two_current_frame],
+                    position,
+                )
+            else:
+                position = (self.screen_width / 2 - 50 + 128 + 20, 220)
+                screen.blit(self.player_two_ready_text, position)
+                screen.blit(
+                    self.input_buttons[
+                        (
+                            "ctrl_button"
+                            if not Input.is_joystick_connected(1)
+                            else "r1_button"
+                        )
+                    ],
+                    position,
+                )
 
         self.screen.blit(self.surface, (0, 0))
         super().update(screen)
@@ -452,6 +528,7 @@ class GameScene(Scene):
         Executor.reset()
         Bullet.instances.clear()
         Rocket.instances.clear()
+        Rocket.indicator_instances.clear()
         Bomb._instance = None
 
         self.state: GameState = GameState(screen, surface)
@@ -580,7 +657,7 @@ class GameScene(Scene):
             self.buttons[name] = buttons
 
         self.font = pygame.font.Font(None, 26)
-        self.text_surface = self.font.render("To skip tutorial", False, (255, 255, 255))
+        self.text_surface = self.font.render("Hold to skip", False, (255, 255, 255))
 
         Executor.wait(
             (
@@ -1011,6 +1088,16 @@ class ResultScene(Scene):
         self.surface = surface
         self.screen = screen
 
+        sounds_data = {
+            "Button hover": "assets/music/hover.mp3",
+            "Button click": "assets/music/click.mp3",
+        }
+
+        SoundSystem.load_all_sounds(sounds_data)
+
+        SoundSystem.load_background_music("assets/music/main_backgorund.mp3")
+        SoundSystem.play_background_music()
+
         # Load background images
         self.background_images = [
             pygame.transform.scale(
@@ -1047,9 +1134,7 @@ class ResultScene(Scene):
         }
 
         self.names_images = [
-            pygame.transform.scale(
-            pygame.image.load(path),
-            (576, 324))
+            pygame.transform.scale(pygame.image.load(path), (576, 324))
             for name, path in self.names.items()
         ]
 
@@ -1058,22 +1143,144 @@ class ResultScene(Scene):
             if name == ResultScene.winner[0].lower():
                 self.index = i
 
+        self.selected_index = -1
+
+        self.buttons = []
+        self.buttons.append(
+            Button(
+                screen_width / 2,
+                screen_height - 50,
+                120,
+                40,
+                text="Again",
+                font_size=36,
+            )
+        )
+        self.buttons.append(
+            Button(
+                screen_width / 2 + 140,
+                screen_height - 50,
+                120,
+                40,
+                text="Give Up",
+                font_size=36,
+            )
+        )
+
     def update(self, screen) -> None:
 
         self.surface.fill((0, 0, 0, 0))
 
-        if Input.is_key_pressed(pygame.K_ESCAPE):
-            ResultScene.winner = None
-            Scene.load_async(
-                MenuScene,
-                self.screen,
-                self.surface,
-                self.screen_width,
-                self.screen_height,
-                False,
-            )
+        if Input.is_joystick_connected(0):
+            if Input.is_joystick_button_pressed(0, 13):  # LEFT
+                self.selected_index = max(self.selected_index - 1, 0)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_joystick_button_pressed(0, 14):  # RIGHT
+                self.selected_index = min(self.selected_index + 1, 1)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_joystick_button_pressed(0, 1):  # ACCEPT
+                if self.selected_index == 0:
+                    SoundSystem.play_sound("Button click")
+                    Scene.load_async(
+                        GameScene,
+                        self.screen,
+                        self.surface,
+                        self.screen_width,
+                        self.screen_height,
+                        True,
+                    )
+                elif self.selected_index == 1:
+                    SoundSystem.play_sound("Button click")
+                    ResultScene.winner = None
+                    Scene.load_async(
+                        MenuScene,
+                        self.screen,
+                        self.surface,
+                        self.screen_width,
+                        self.screen_height,
+                        False,
+                    )
+                pass
+            pass
+        if Input.is_joystick_connected(1):
+            if Input.is_joystick_button_pressed(1, 13):  # LEFT
+                self.selected_index = max(self.selected_index - 1, 0)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_joystick_button_pressed(1, 14):  # RIGHT
+                self.selected_index = min(self.selected_index + 1, 1)
+                for i in range(len(self.buttons)):
+                    self.buttons[i].is_hovered = i == self.selected_index
+            if Input.is_joystick_button_pressed(1, 1):  # ACCEPT
+                if self.selected_index == 0:
+                    SoundSystem.play_sound("Button click")
+                    Scene.load_async(
+                        GameScene,
+                        self.screen,
+                        self.surface,
+                        self.screen_width,
+                        self.screen_height,
+                        True,
+                    )
+                elif self.selected_index == 1:
+                    SoundSystem.play_sound("Button click")
+                    ResultScene.winner = None
+                    Scene.load_async(
+                        MenuScene,
+                        self.screen,
+                        self.surface,
+                        self.screen_width,
+                        self.screen_height,
+                        False,
+                    )
+                pass
+            pass
+
+        if Input.is_key_pressed(pygame.K_LEFT) or Input.is_key_pressed(
+            pygame.K_w
+        ):  # UP
+            self.selected_index = max(self.selected_index - 1, 0)
+            for i in range(len(self.buttons)):
+                self.buttons[i].is_hovered = i == self.selected_index
+        if Input.is_key_pressed(pygame.K_RIGHT) or Input.is_key_pressed(
+            pygame.K_s
+        ):  # DOWN
+            self.selected_index = min(self.selected_index + 1, 1)
+            for i in range(len(self.buttons)):
+                self.buttons[i].is_hovered = i == self.selected_index
+        if Input.is_key_pressed(pygame.K_SPACE) or Input.is_key_pressed(
+            pygame.K_RETURN
+        ):
+            if self.selected_index == 0:
+                SoundSystem.play_sound("Button click")
+                Scene.load_async(
+                    GameScene,
+                    self.screen,
+                    self.surface,
+                    self.screen_width,
+                    self.screen_height,
+                    True,
+                )
+            elif self.selected_index == 1:
+                SoundSystem.play_sound("Button click")
+                ResultScene.winner = None
+                Scene.load_async(
+                    MenuScene,
+                    self.screen,
+                    self.surface,
+                    self.screen_width,
+                    self.screen_height,
+                    False,
+                )
+            pass
+        pass
 
         self.render_background(self.screen)
+
+        for button in self.buttons:
+            button.draw(self.screen)
 
         self.screen.blit(
             self.names_images[self.index],
