@@ -111,7 +111,8 @@ class Player(ControllableObject):
                 self.current_explosion_frame = self.current_explosion_frame + 1
                 if self.current_explosion_frame == len(self.explosion_frames):
                     self.animate_explosion = False
-                    self.lives -= 1
+                    if not state.is_tutorial:
+                        self.lives -= 1
                     self.get_component(HealthBarUI).on_death()
                     if self.lives > 0:
                         self.reset()

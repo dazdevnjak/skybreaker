@@ -203,7 +203,7 @@ class HealthBarUI(Component):
 
         state.surface.blit(self.health_bar_bg, health_bar_position)
 
-        if parent.is_player:
+        if parent.is_player and not state.is_tutorial:
             self.live_bar = self.lives_bar[self.lives_left]
             live_bar_position = (
                 parent.position[0] + 80 + self.shake_x_offset,

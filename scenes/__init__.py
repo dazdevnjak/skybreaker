@@ -90,8 +90,9 @@ class MenuScene(Scene):
         SoundSystem.load_all_sounds(sounds_data)
 
         # Load background images
-        self.background_image = pygame.transform.scale(pygame.image.load(
-            f"assets/images/scenes/select_character_screen.png"), (576, 324)
+        self.background_image = pygame.transform.scale(
+            pygame.image.load(f"assets/images/scenes/select_character_screen.png"),
+            (576, 324),
         )
 
         self.name_check = False
@@ -99,7 +100,14 @@ class MenuScene(Scene):
 
         self.buttons = []
         self.buttons.append(
-            Button(screen_width / 2, screen_height - 50, 120, 40, text="Start", font_size=36)
+            Button(
+                screen_width / 2,
+                screen_height - 50,
+                120,
+                40,
+                text="Start",
+                font_size=36,
+            )
         )
         self.buttons.append(
             Button(
@@ -371,6 +379,7 @@ class GameScene(Scene):
         self.state: GameState = GameState(screen, surface)
         self.state.window_width = window_width
         self.state.window_height = window_height
+        self.state.is_tutorial = is_tutorial
         self.is_tutorial = is_tutorial
         self.player_one_skiping = False
         self.player_two_skiping = False
@@ -925,8 +934,14 @@ class ResultScene(Scene):
 
         # Load background images
         self.background_images = [
-            pygame.transform.scale(pygame.image.load(f"assets/images/scenes/blue_player_win_screen.png"), (576, 324)),  # Player 1
-            pygame.transform.scale(pygame.image.load(f"assets/images/scenes/green_player_win_screen.png"), (576, 324)),  # Player 2
+            pygame.transform.scale(
+                pygame.image.load(f"assets/images/scenes/blue_player_win_screen.png"),
+                (576, 324),
+            ),  # Player 1
+            pygame.transform.scale(
+                pygame.image.load(f"assets/images/scenes/green_player_win_screen.png"),
+                (576, 324),
+            ),  # Player 2
         ]
 
         self.names = {

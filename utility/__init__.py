@@ -115,6 +115,8 @@ class GameState:
 
     window_width = None
     window_height = None
+    
+    is_tutorial = False
 
     def __init__(self, _screen, _surface) -> None:
         self.surface = _surface
