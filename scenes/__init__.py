@@ -5,7 +5,7 @@ from utility import *
 
 from entities.player import Player, Enemy
 from entities.bullet import Bullet, Bomb
-from entities.rocket import Rocket, Check_Collision_Bullet_Rocket
+from entities.rocket import Rocket
 from entities.collectable import Collectable, BombItem
 
 
@@ -788,7 +788,12 @@ class GameScene(Scene):
                 self.state.player_one,
                 self.state.player_two,
             )
-            Check_Collision_Bullet_Rocket()
+            for bullet in Bullet.instances[:]:
+                for rocket in Rocket.instances[:]:
+                    if rocket.check_intersection(bullet.rect):
+                        Bullet.instances.remove(bullet)
+                        Rocket.instances.remove(rocket)
+                        break
 
         self.state.screen.blit(self.state.surface, (0, 0))
         super().update(screen)
