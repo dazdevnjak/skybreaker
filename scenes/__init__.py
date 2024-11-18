@@ -8,6 +8,8 @@ from entities.bullet import Bullet, Bomb
 from entities.rocket import Rocket
 from entities.collectable import Collectable, BombItem
 
+import random
+
 
 class Scene:
     active_scene = None
@@ -145,6 +147,31 @@ class MenuScene(Scene):
                 y += 20 + 20
                 index = 0
 
+        player_one_image_paths = [
+            f"assets/images/player_one/player_{i}.png" for i in range(1, 9)
+        ]
+        player_two_image_paths = [
+            f"assets/images/player_two/player_{i}.png" for i in range(1, 9)
+        ]
+
+        self.player_one_frames = [
+            pygame.transform.scale(pygame.image.load(path), (128, 72)).convert_alpha()
+            for path in player_one_image_paths
+        ]
+        self.player_two_frames = [
+            pygame.transform.scale(pygame.image.load(path), (128, 72)).convert_alpha()
+            for path in player_two_image_paths
+        ]
+        self.animation_delay = 100
+        self.player_one_current_frame = random.randrange(0, len(self.player_one_frames))
+        self.player_two_current_frame = random.randrange(0, len(self.player_two_frames))
+
+        self.last_update = pygame.time.get_ticks()
+
+        self.font = pygame.font.Font(None, 12)
+        self.player_one_name_ui = None
+        self.player_two_name_ui = None
+
     def handle_player_input(self, player_index, INPUT):
         index = (
             self.player_one_name_selected_index
@@ -169,10 +196,16 @@ class MenuScene(Scene):
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
+                    self.player_one_name_ui = self.font.render(
+                        self.player_names[index], False, (255, 255, 255)
+                    )
                     self.ready_player_one = True
                 else:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
+                    self.player_two_name_ui = self.font.render(
+                        self.player_names[index], False, (255, 255, 255)
+                    )
                     self.ready_player_two = True
                 pass  # ACCEPT
         else:
@@ -192,10 +225,16 @@ class MenuScene(Scene):
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
+                    self.player_one_name_ui = self.font.render(
+                        self.player_names[index], False, (255, 255, 255)
+                    )
                     self.ready_player_one = True
                 else:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_two_name_placeholder = self.player_names[index]
+                    self.player_two_name_ui = self.font.render(
+                        self.player_names[index], False, (255, 255, 255)
+                    )
                     self.ready_player_two = True
                 pass  # ACCEPT
             pass
@@ -232,8 +271,10 @@ class MenuScene(Scene):
             return
 
         if self.name_check:
-            self.handle_player_input(0, KEYBOARD_PLAYER_ONE_CONTROLS)
-            self.handle_player_input(1, KEYBOARD_PLAYER_TWO_CONTROLS)
+            if not self.ready_player_one:
+                self.handle_player_input(0, KEYBOARD_PLAYER_ONE_CONTROLS)
+            if not self.ready_player_two:
+                self.handle_player_input(1, KEYBOARD_PLAYER_TWO_CONTROLS)
             pass
         else:
             if Input.is_joystick_connected(0):
@@ -323,6 +364,31 @@ class MenuScene(Scene):
                         self.screen_height,
                         True,
                     )
+
+        current_time = pygame.time.get_ticks()
+        if (current_time - self.last_update) > self.animation_delay:
+            self.player_one_current_frame = (self.player_one_current_frame + 1) % len(
+                self.player_one_frames
+            )
+            self.player_two_current_frame = (self.player_two_current_frame + 1) % len(
+                self.player_two_frames
+            )
+            self.last_update = current_time
+
+        if self.ready_player_one:
+            position = (self.screen_width / 2 - 50, 220)
+            screen.blit(self.player_one_name_ui, position)
+            screen.blit(
+                self.player_one_frames[self.player_one_current_frame],
+                position,
+            )
+        if self.ready_player_two:
+            position = (self.screen_width / 2 - 50 + 128 + 20, 220)
+            screen.blit(self.player_two_name_ui, position)
+            screen.blit(
+                self.player_two_frames[self.player_two_current_frame],
+                position,
+            )
 
         self.screen.blit(self.surface, (0, 0))
         super().update(screen)
