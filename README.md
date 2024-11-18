@@ -1,3 +1,12 @@
+# How to build
+
+- Install PyInstaller: `pip install pyinstaller`
+- Create the Executable: `pyinstaller --onefile --windowed main.py`
+- Note:
+    1. You must be located in `skybreaker` folder 
+    2. When build is done you need to manually copy `assets` folder into the `skybreaker/dist` folder
+    3. `main.exe` is located into the `skybreaker/dist` folder and for the game to run it need to contains `assets` folder with it
+
 # TODO List
 
 ## Scene
