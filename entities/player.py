@@ -16,7 +16,7 @@ class Player(ControllableObject):
     def __init__(
         self, name, image_paths, position, size=(128, 72), animation_delay=100
     ):
-        self.lives = 1
+        self.lives = 2
         self.name = name
         super().__init__(position, True, size)
 
