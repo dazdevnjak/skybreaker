@@ -213,8 +213,6 @@ class Enemy(ControllableObject):
         else:
             SoundSystem.play_sound("On damage projectile")
         if self.health <= 0:
-            if self.lives_left > 0:
-                self.health = 100
             self.on_death()
 
         self.get_component(HealthBarUI).damage()

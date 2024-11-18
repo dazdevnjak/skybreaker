@@ -426,6 +426,7 @@ class Button:
         font_size=30,
         font_color=(0, 0, 0),
         button_color=(209, 179, 128),
+        stroke_color=(97, 78, 6), 
         hover_color=(94, 209, 255),
     ):
         self.rect = pygame.Rect(x, y, width, height)
@@ -433,6 +434,7 @@ class Button:
         self.font_size = font_size
         self.font_color = font_color
         self.button_color = button_color
+        self.stroke_color = stroke_color
         self.hover_color = hover_color
         self.is_hovered = False
         self.was_hovered = False
@@ -448,8 +450,10 @@ class Button:
             self.was_hovered = self.is_hovered
 
         if self.is_hovered:
+            pygame.draw.rect(screen, self.stroke_color, pygame.Rect(self.rect.x - 2, self.rect.y - 2, self.rect.width + 4, self.rect.height + 4))
             pygame.draw.rect(screen, self.hover_color, self.rect)
         else:
+            pygame.draw.rect(screen, self.stroke_color, pygame.Rect(self.rect.x - 2, self.rect.y - 2, self.rect.width + 4, self.rect.height + 4))
             pygame.draw.rect(screen, self.button_color, self.rect)
         screen.blit(self.text_surface, self.text_rect)
 

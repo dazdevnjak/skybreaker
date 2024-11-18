@@ -90,10 +90,13 @@ class MenuScene(Scene):
         SoundSystem.load_all_sounds(sounds_data)
 
         # Load background images
-        self.background_image = pygame.transform.scale(
-            pygame.image.load(f"assets/images/scenes/select_character_screen.png"),
-            (576, 324),
-        )
+        self.background_image = [ pygame.transform.scale(
+            pygame.image.load(f"assets/images/scenes/main_menu_screen.png"),
+            (576, 324)),
+            pygame.transform.scale(
+            pygame.image.load(f"assets/images/scenes/select_player_name_screen.png"),
+            (576, 324))
+        ]
 
         self.name_check = False
         self.selected_index = -1
@@ -330,7 +333,10 @@ class MenuScene(Scene):
 
     # Render background with parallax
     def render_background(self, screen):
-        screen.blit(self.background_image, (0, 0))
+        if self.name_check:
+            screen.blit(self.background_image[1], (0, 0))
+        else:
+            screen.blit(self.background_image[0], (0, 0))
 
     pass
 
@@ -491,7 +497,7 @@ class GameScene(Scene):
             ),
             ("t_button", "assets/images/tutorial/t_button.png", (170 // 6, 170 // 6)),
             ("3_button", "assets/images/tutorial/3_button.png", (170 // 6, 170 // 6)),
-            ("x_button", "assets/images/tutorial/x_button.png", (170 // 5, 170 // 6)),
+            ("o_button", "assets/images/tutorial/o_button.png", (170 // 5, 170 // 6)),
         ]
 
         self.buttons = {}
@@ -554,7 +560,7 @@ class GameScene(Scene):
             )
             self.state.screen.blit(button, blit_position)
 
-        last_button, last_pos = self.buttons["x_button"], skip
+        last_button, last_pos = self.buttons["o_button"], skip
         blit_position = (
             self.state.window_width - last_pos[0],
             self.state.window_height - last_pos[1],
@@ -968,7 +974,10 @@ class ResultScene(Scene):
         }
 
         self.names_images = [
-            pygame.image.load(path) for name, path in self.names.items()
+            pygame.transform.scale(
+            pygame.image.load(path),
+            (576, 324))
+            for name, path in self.names.items()
         ]
 
         self.index = 0
