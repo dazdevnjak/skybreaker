@@ -51,7 +51,7 @@ class Player(ControllableObject):
 
         self.death_callback = None
 
-        self.font = pygame.font.Font(None, 12)
+        self.font = pygame.font.SysFont('calibri', 11)
         self.name_ui = self.font.render(self.name, False, (255, 255, 255))
 
     def add_bomb(self):
@@ -133,7 +133,7 @@ class Player(ControllableObject):
             screen.blit(
                 self.explosion_frames[self.current_explosion_frame], self.position
             )
-        screen.blit(self.name_ui, self.position)
+        screen.blit(self.name_ui, (self.position[0] + 10, self.position[1]))
 
     def can_fire(self) -> bool:
         return self.fire_cooldown <= 0

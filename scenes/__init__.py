@@ -74,7 +74,7 @@ class MenuScene(Scene):
     player_one_name_placeholder = None
     player_two_name_placeholder = None
 
-    PLAYER_ONE_HOVER_COLOR = (56, 76, 112)
+    PLAYER_ONE_HOVER_COLOR = (101, 131, 174)
     PLAYER_TWO_HOVER_COLOR = (86, 138, 117)
 
     def __init__(
@@ -90,6 +90,9 @@ class MenuScene(Scene):
         }
 
         SoundSystem.load_all_sounds(sounds_data)
+
+        SoundSystem.load_background_music("assets/music/main_backgorund.mp3")
+        SoundSystem.play_background_music()
 
         # Load background images
         self.background_image = [ pygame.transform.scale(
@@ -196,6 +199,7 @@ class MenuScene(Scene):
                 index = self.change_name_index(index, player_index, -1)
                 pass  # GO LEFT
             if Input.is_joystick_button_pressed(player_index, 1):
+                self.font = pygame.font.SysFont('calibri', 12)
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
@@ -225,6 +229,8 @@ class MenuScene(Scene):
                 index = self.change_name_index(index, player_index, 1)
                 pass  # RIGHT
             if Input.is_key_pressed(INPUT[6]):
+                self.font = pygame.font.SysFont('calibri', 12)
+
                 if player_index == 0:
                     SoundSystem.play_sound("Button click")
                     MenuScene.player_one_name_placeholder = self.player_names[index]
@@ -379,7 +385,7 @@ class MenuScene(Scene):
             self.last_update = current_time
 
         if self.ready_player_one:
-            position = (self.screen_width / 2 - 50, 220)
+            position = (self.screen_width / 2 - 50 - 128, 220)
             screen.blit(self.player_one_name_ui, position)
             screen.blit(
                 self.player_one_frames[self.player_one_current_frame],
@@ -408,7 +414,7 @@ class MenuScene(Scene):
 
 
 class GameScene(Scene):
-    ENEMY_SPAWN_TIME = 2000  # 15000  # 15000ms / 15s
+    ENEMY_SPAWN_TIME = 10000  # 15000  # 15000ms / 15s
     ROCKETS_START_TIME = 5000  # 5000ms / 5s
 
     ENEMY_TUTORIAL_SPAWN_TIME = 10000
@@ -466,6 +472,7 @@ class GameScene(Scene):
             "Pick up": "assets/music/pickup.mp3",
         }
 
+        SoundSystem.stop_background_music()
         SoundSystem.load_background_music("assets/music/background.mp3")
         SoundSystem.load_all_sounds(sounds_data)
         SoundSystem.play_background_music()
