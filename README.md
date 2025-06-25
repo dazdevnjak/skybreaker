@@ -51,7 +51,7 @@
 - [x] Dodati mogucnost igranja igre sa tutorijalima i bez njih
 - [x] Dodati postepeno otezavanje igre(recimo prvih 10-ak sekundi se igraci medjusobno pucaju zatim krece stvaranje projektila sa strane, nakon 10-ak sekunda se stvara neprijatelj...)
 - [x] Tutorijal nivo (ikonama objasniti igracima koje komande treba da se koriste za odredjene akcije)
-- [x] Dodati mogucnost da kada oba igraca drze O na dzojstiku tutorijal se zavrsa i igra pocinje ispocetka bez UI za komande
+- [x] Dodati mogucnost da kada oba igraca drze O na dzojstiku tutorijal se zavrsa i igra pocinje ispocetka bez UI za komande.
 
 ## Projectiles
 - [x] Popraviti stvaranje projektila, povremeno se desi da se stvori dva projektila na vrlo maloj razlici na z osi sto deluje dosta neprirodno
